@@ -1,0 +1,13 @@
+# Build artifacts
+bin/
+
+# Runtime artifacts
+*.log
+*.pid
+.runtime/
+
+# Legacy local infrastructure state (pre-.runtime layout)
+data/
+
+# Go test artifacts
+coverage.out

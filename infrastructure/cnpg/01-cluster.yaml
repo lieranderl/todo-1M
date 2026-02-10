@@ -1,0 +1,18 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: todo-db
+  namespace: default
+spec:
+  instances: 3
+  storage:
+    size: 20Gi
+    storageClass: "local-storage" # Assumed existence based on constraints (NVMe)
+  bootstrap:
+    initdb:
+      database: app
+      owner: app
+  postgresql:
+    parameters:
+      max_connections: "1000"
+      shared_buffers: "256MB"

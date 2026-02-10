@@ -1,0 +1,31 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: todo-routes
+  namespace: default
+spec:
+  parentRefs:
+    - name: todo-gateway
+  hostnames:
+    - "todo.app"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/v1/command
+      backendRefs:
+        - name: command-api
+          port: 8080
+      filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            add:
+              - name: X-User-ID
+                value: "from-auth-claim" # Placeholder for JWT claim extraction
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /events
+      backendRefs:
+        - name: sse-streamer
+          port: 8081

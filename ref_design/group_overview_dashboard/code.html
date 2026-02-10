@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Group Overview Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen flex">
+<!-- Sidebar Navigation -->
+<aside class="w-64 border-r border-primary/10 bg-white dark:bg-background-dark/50 flex-shrink-0 flex flex-col">
+<div class="p-6 flex items-center gap-3">
+<div class="w-8 h-8 bg-primary rounded flex items-center justify-center">
+<span class="material-icons text-white text-sm">check_circle</span>
+</div>
+<span class="font-bold text-xl tracking-tight">CollabDo</span>
+</div>
+<nav class="flex-1 px-4 space-y-2 mt-4">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-primary/5 dark:hover:bg-primary/10 rounded-lg transition-colors group" href="#">
+<span class="material-icons text-[20px] group-hover:text-primary">assignment</span>
+<span class="font-medium">My Tasks</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-primary/10 text-primary rounded-lg border-r-4 border-primary transition-colors" href="#">
+<span class="material-icons text-[20px]">group</span>
+<span class="font-medium">Groups</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-primary/5 dark:hover:bg-primary/10 rounded-lg transition-colors group" href="#">
+<span class="material-icons text-[20px] group-hover:text-primary">analytics</span>
+<span class="font-medium">Reports</span>
+</a>
+<div class="pt-4 mt-4 border-t border-primary/10">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-primary/5 dark:hover:bg-primary/10 rounded-lg transition-colors group" href="#">
+<span class="material-icons text-[20px] group-hover:text-primary">settings</span>
+<span class="font-medium">Settings</span>
+</a>
+</div>
+</nav>
+<div class="p-4 mt-auto">
+<div class="p-4 bg-primary/5 dark:bg-primary/10 rounded-xl flex items-center gap-3">
+<img alt="User Profile" class="w-10 h-10 rounded-full object-cover" data-alt="Close up of a smiling professional man" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXe4VFn1J2iaMdaUlSxpd0CbY0BYAYHtDqYEqeIyXNW4K8wHmm0wfkhrESNw5cvWkxSQd5ogdqR7CoCnFp4MvNYkMTsFbHjsxK1DmxQV-Ng83MUnan_-IZTocpvBXHuW4QsPWnrHzAFINQENX6aSBZSP5W91-WKFI09ntGpwxYYN8qVJgOmrhluIM9nmJuOiXxJH7k6zkjQnXj8rAcXxNguKZ_-U9caH7YWt3AVcuH0InEFTtTupdhOIh9ZdNXJ4WrAF7Lb060gEA"/>
+<div class="overflow-hidden">
+<p class="text-sm font-semibold truncate">Alex Johnson</p>
+<p class="text-xs text-slate-500 truncate">Admin Account</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col h-screen overflow-hidden">
+<!-- Header -->
+<header class="h-20 border-b border-primary/10 flex items-center justify-between px-8 bg-white/50 dark:bg-background-dark/30 backdrop-blur-sm">
+<div class="flex items-center gap-4 flex-1">
+<h1 class="text-2xl font-bold">Groups</h1>
+<div class="relative w-full max-w-md ml-4">
+<span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+<input class="w-full bg-slate-100 dark:bg-slate-800/50 border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary/50 transition-all" placeholder="Search groups..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-lg font-semibold transition-all shadow-lg shadow-primary/20">
+<span class="material-icons text-sm">add</span>
+<span>Create New Group</span>
+</button>
+</div>
+</header>
+<!-- Scrollable Grid Area -->
+<div class="flex-1 overflow-y-auto p-8">
+<!-- Summary Stats -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+<div class="bg-white dark:bg-slate-800/40 p-5 rounded-xl border border-primary/10 shadow-sm">
+<div class="flex items-center justify-between">
+<span class="text-slate-500 text-sm font-medium uppercase tracking-wider">Total Groups</span>
+<div class="w-10 h-10 bg-primary/20 text-primary rounded-lg flex items-center justify-center">
+<span class="material-icons">category</span>
+</div>
+</div>
+<div class="mt-2">
+<span class="text-3xl font-bold">12</span>
+<span class="text-emerald-500 text-sm font-medium ml-2">+2 this month</span>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-800/40 p-5 rounded-xl border border-primary/10 shadow-sm">
+<div class="flex items-center justify-between">
+<span class="text-slate-500 text-sm font-medium uppercase tracking-wider">Active Tasks</span>
+<div class="w-10 h-10 bg-primary/20 text-primary rounded-lg flex items-center justify-center">
+<span class="material-icons">task_alt</span>
+</div>
+</div>
+<div class="mt-2">
+<span class="text-3xl font-bold">84</span>
+<span class="text-slate-500 text-sm ml-2">across all teams</span>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-800/40 p-5 rounded-xl border border-primary/10 shadow-sm">
+<div class="flex items-center justify-between">
+<span class="text-slate-500 text-sm font-medium uppercase tracking-wider">Total Members</span>
+<div class="w-10 h-10 bg-primary/20 text-primary rounded-lg flex items-center justify-center">
+<span class="material-icons">people</span>
+</div>
+</div>
+<div class="mt-2">
+<span class="text-3xl font-bold">42</span>
+<span class="text-slate-500 text-sm ml-2">collaborators</span>
+</div>
+</div>
+</div>
+<!-- Group Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
+<!-- Group Card 1 -->
+<div class="group bg-white dark:bg-slate-800/40 border border-primary/10 rounded-xl p-6 hover:border-primary/50 transition-all cursor-pointer shadow-sm flex flex-col">
+<div class="flex items-start justify-between mb-4">
+<div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+<span class="material-icons">engineering</span>
+</div>
+<button class="text-slate-400 hover:text-primary transition-colors">
+<span class="material-icons text-xl">settings</span>
+</button>
+</div>
+<h3 class="text-lg font-bold mb-1">Engineering Team</h3>
+<div class="flex items-center gap-2 text-slate-500 text-sm mb-6">
+<span class="material-icons text-sm">person</span>
+<span>18 Members</span>
+</div>
+<div class="mt-auto">
+<div class="flex items-center justify-between mb-2 text-sm">
+<span class="font-medium">Progress</span>
+<span class="text-primary font-bold">65%</span>
+</div>
+<div class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 65%"></div>
+</div>
+<p class="text-[11px] text-slate-500 mt-2 uppercase font-semibold">14 of 22 tasks completed</p>
+</div>
+</div>
+<!-- Group Card 2 -->
+<div class="group bg-white dark:bg-slate-800/40 border border-primary/10 rounded-xl p-6 hover:border-primary/50 transition-all cursor-pointer shadow-sm flex flex-col">
+<div class="flex items-start justify-between mb-4">
+<div class="w-12 h-12 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500 group-hover:bg-amber-500 group-hover:text-white transition-colors">
+<span class="material-icons">campaign</span>
+</div>
+<button class="text-slate-400 hover:text-primary transition-colors">
+<span class="material-icons text-xl">settings</span>
+</button>
+</div>
+<h3 class="text-lg font-bold mb-1">Marketing Q4</h3>
+<div class="flex items-center gap-2 text-slate-500 text-sm mb-6">
+<span class="material-icons text-sm">person</span>
+<span>8 Members</span>
+</div>
+<div class="mt-auto">
+<div class="flex items-center justify-between mb-2 text-sm">
+<span class="font-medium">Progress</span>
+<span class="text-amber-500 font-bold">32%</span>
+</div>
+<div class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+<div class="h-full bg-amber-500 rounded-full" style="width: 32%"></div>
+</div>
+<p class="text-[11px] text-slate-500 mt-2 uppercase font-semibold">4 of 12 tasks completed</p>
+</div>
+</div>
+<!-- Group Card 3 -->
+<div class="group bg-white dark:bg-slate-800/40 border border-primary/10 rounded-xl p-6 hover:border-primary/50 transition-all cursor-pointer shadow-sm flex flex-col">
+<div class="flex items-start justify-between mb-4">
+<div class="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+<span class="material-icons">palette</span>
+</div>
+<button class="text-slate-400 hover:text-primary transition-colors">
+<span class="material-icons text-xl">settings</span>
+</button>
+</div>
+<h3 class="text-lg font-bold mb-1">Product Design</h3>
+<div class="flex items-center gap-2 text-slate-500 text-sm mb-6">
+<span class="material-icons text-sm">person</span>
+<span>5 Members</span>
+</div>
+<div class="mt-auto">
+<div class="flex items-center justify-between mb-2 text-sm">
+<span class="font-medium">Progress</span>
+<span class="text-emerald-500 font-bold">88%</span>
+</div>
+<div class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+<div class="h-full bg-emerald-500 rounded-full" style="width: 88%"></div>
+</div>
+<p class="text-[11px] text-slate-500 mt-2 uppercase font-semibold">15 of 17 tasks completed</p>
+</div>
+</div>
+<!-- Group Card 4 -->
+<div class="group bg-white dark:bg-slate-800/40 border border-primary/10 rounded-xl p-6 hover:border-primary/50 transition-all cursor-pointer shadow-sm flex flex-col">
+<div class="flex items-start justify-between mb-4">
+<div class="w-12 h-12 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-500 group-hover:bg-indigo-500 group-hover:text-white transition-colors">
+<span class="material-icons">security</span>
+</div>
+<button class="text-slate-400 hover:text-primary transition-colors">
+<span class="material-icons text-xl">settings</span>
+</button>
+</div>
+<h3 class="text-lg font-bold mb-1">Cyber Security</h3>
+<div class="flex items-center gap-2 text-slate-500 text-sm mb-6">
+<span class="material-icons text-sm">person</span>
+<span>11 Members</span>
+</div>
+<div class="mt-auto">
+<div class="flex items-center justify-between mb-2 text-sm">
+<span class="font-medium">Progress</span>
+<span class="text-indigo-500 font-bold">12%</span>
+</div>
+<div class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+<div class="h-full bg-indigo-500 rounded-full" style="width: 12%"></div>
+</div>
+<p class="text-[11px] text-slate-500 mt-2 uppercase font-semibold">1 of 8 tasks completed</p>
+</div>
+</div>
+<!-- Group Card 5 -->
+<div class="group bg-white dark:bg-slate-800/40 border border-primary/10 rounded-xl p-6 hover:border-primary/50 transition-all cursor-pointer shadow-sm flex flex-col">
+<div class="flex items-start justify-between mb-4">
+<div class="w-12 h-12 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-500 group-hover:bg-rose-500 group-hover:text-white transition-colors">
+<span class="material-icons">headset_mic</span>
+</div>
+<button class="text-slate-400 hover:text-primary transition-colors">
+<span class="material-icons text-xl">settings</span>
+</button>
+</div>
+<h3 class="text-lg font-bold mb-1">Customer Support</h3>
+<div class="flex items-center gap-2 text-slate-500 text-sm mb-6">
+<span class="material-icons text-sm">person</span>
+<span>24 Members</span>
+</div>
+<div class="mt-auto">
+<div class="flex items-center justify-between mb-2 text-sm">
+<span class="font-medium">Progress</span>
+<span class="text-rose-500 font-bold">50%</span>
+</div>
+<div class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+<div class="h-full bg-rose-500 rounded-full" style="width: 50%"></div>
+</div>
+<p class="text-[11px] text-slate-500 mt-2 uppercase font-semibold">50 of 100 tasks completed</p>
+</div>
+</div>
+<!-- Create New Card Placeholder -->
+<div class="group border-2 border-dashed border-primary/20 rounded-xl p-6 flex flex-col items-center justify-center text-center hover:border-primary/60 hover:bg-primary/5 transition-all cursor-pointer">
+<div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-3">
+<span class="material-icons">add</span>
+</div>
+<span class="font-bold text-slate-400 group-hover:text-primary transition-colors">Create New Group</span>
+<p class="text-xs text-slate-500 mt-1">Start collaborating with a new team</p>
+</div>
+</div>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Group Settings &amp; RBAC Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(19, 127, 236, 0.2);
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(19, 127, 236, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex font-display">
+<!-- Sidebar Navigation -->
+<aside class="w-64 border-r border-slate-200 dark:border-primary/10 bg-white dark:bg-background-dark flex flex-col hidden lg:flex">
+<div class="p-6 flex items-center gap-3">
+<div class="w-8 h-8 bg-primary rounded flex items-center justify-center">
+<span class="material-icons text-white text-lg">check_circle</span>
+</div>
+<h1 class="font-bold text-lg tracking-tight">TaskFlow Pro</h1>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary rounded transition-colors" href="#">
+<span class="material-icons text-xl">dashboard</span>
+<span class="font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary rounded transition-colors" href="#">
+<span class="material-icons text-xl">assignment</span>
+<span class="font-medium">My Tasks</span>
+</a>
+<div class="pt-4 pb-2 px-3">
+<span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Management</span>
+</div>
+<a class="flex items-center gap-3 px-3 py-2 bg-primary/10 text-primary rounded-lg transition-colors" href="#">
+<span class="material-icons text-xl">settings_suggest</span>
+<span class="font-medium">Group Settings</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary rounded transition-colors" href="#">
+<span class="material-icons text-xl">people_alt</span>
+<span class="font-medium">Members</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary rounded transition-colors" href="#">
+<span class="material-icons text-xl">security</span>
+<span class="font-medium">Audit Logs</span>
+</a>
+</nav>
+<div class="p-4 border-t border-slate-200 dark:border-primary/10">
+<div class="flex items-center gap-3 p-2 rounded hover:bg-slate-100 dark:hover:bg-primary/5 cursor-pointer">
+<img alt="Profile" class="w-8 h-8 rounded-full" data-alt="Professional male portrait avatar image" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCF7FX_znTPvQk3O5S5b2FOaS3Zmyq_RxhsagxMMuaCcNTUxm34-iirOV2zMgiNbhlV9J4ob8WI9DQATFx9F7QeU2COKXBKHxsmjyRO-1nEgnDvm1hGvW5hSmNWwBdcfcaJf5wJGwd78-KpQg4snuudKWB_I8ib-473CUA-HL05rnzM2ATJx-iI4spYe1svSJil_q9p2yrtkrAalz8mLQdlZzbN_1woBt4JOG6sWqXe4ulRSITg_XHcH2CYVLP9C0wDRNPXRcxZr0k"/>
+<div class="overflow-hidden">
+<p class="text-sm font-semibold truncate">Alex Rivera</p>
+<p class="text-xs text-slate-500 truncate">Group Owner</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 overflow-y-auto custom-scrollbar">
+<!-- Top Navigation Bar -->
+<header class="h-16 border-b border-slate-200 dark:border-primary/10 bg-white/50 dark:bg-background-dark/50 backdrop-blur flex items-center justify-between px-8 sticky top-0 z-10">
+<div class="flex items-center gap-4">
+<h2 class="text-xl font-semibold">Group Management</h2>
+<span class="px-2 py-0.5 bg-primary/10 text-primary text-xs font-bold rounded">Marketing Team</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-primary/10 rounded-full transition-colors relative">
+<span class="material-icons text-xl">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-background-dark"></span>
+</button>
+<div class="h-8 w-px bg-slate-200 dark:bg-primary/20 mx-2"></div>
+<button class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 flex items-center gap-2">
+<span class="material-icons text-sm">person_add</span>
+                    Invite Member
+                </button>
+</div>
+</header>
+<!-- Main Body Content -->
+<div class="max-w-6xl mx-auto p-8 space-y-8">
+<!-- Quick Invite Card -->
+<section class="bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-primary/10 rounded-xl p-6 shadow-sm">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+<div>
+<h3 class="text-lg font-semibold mb-1">Invite New Members</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400">Add collaborators to the Marketing Team by username or email address.</p>
+</div>
+<div class="flex-1 max-w-xl flex gap-2">
+<div class="relative flex-1">
+<span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+<input class="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-primary/20 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm transition-all" placeholder="Search by username or email..." type="text"/>
+</div>
+<button class="bg-primary hover:brightness-110 text-white px-6 py-2.5 rounded-lg font-medium transition-all flex items-center justify-center whitespace-nowrap">
+                            Send Invite
+                        </button>
+</div>
+</div>
+</section>
+<!-- Members List & RBAC Table -->
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+<!-- Left: Member List (2/3 width) -->
+<div class="xl:col-span-2 space-y-6">
+<div class="bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-primary/10 rounded-xl overflow-hidden shadow-sm">
+<div class="p-5 border-b border-slate-200 dark:border-primary/10 flex items-center justify-between">
+<h3 class="font-semibold">Team Members (12)</h3>
+<button class="text-primary text-sm font-medium hover:underline">View All</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider">
+<tr>
+<th class="px-6 py-4">User</th>
+<th class="px-6 py-4 text-center">Role</th>
+<th class="px-6 py-4">Status</th>
+<th class="px-6 py-4 text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100 dark:divide-primary/5">
+<tr class="hover:bg-slate-50 dark:hover:bg-primary/5 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<img alt="User" class="w-9 h-9 rounded-full ring-2 ring-primary/20" data-alt="Member profile avatar portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBQLFfEpTjzKvz12L-5VcV7L71ssDt2BgClA1paSh83tSDMTm7wijViYpHrl1-HiBbai6OFBN0QCNDiTTPuZc9fyOUcYdj2Mg_73H0Ul0SeoR8RMrimVeBYCw6aa_Z7MPZoQKdA4KWuGVQPAW-iShNo0mtQpZlXM2heafO-WBuCwG-mX4vne8VRjZbSWroesAf1wFQ-j8Fj7alMVxcF7PMxBJOQTCpSHqhcSMVjFXZoXu2RnsPfedechLQlXSIorJsAOa9L4sEzRh4"/>
+<div>
+<p class="text-sm font-semibold">Alex Rivera</p>
+<p class="text-xs text-slate-500">alex@taskflow.io</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<select class="mx-auto block bg-slate-50 dark:bg-slate-800 border-none rounded text-xs font-semibold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-primary min-w-[120px] py-1.5 cursor-pointer disabled:opacity-50" disabled="">
+<option selected="">Owner</option>
+<option>Admin</option>
+<option>Editor</option>
+<option>Viewer</option>
+</select>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                                                Active
+                                            </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-slate-400 hover:text-red-500 transition-colors">
+<span class="material-icons text-lg">logout</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-slate-50 dark:hover:bg-primary/5 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<img alt="User" class="w-9 h-9 rounded-full ring-2 ring-transparent" data-alt="Female user portrait avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuACfqp4biua-XiuGuU70l2obsXcV6ftUx16KY_pBeFIxIaPPlFAcWXia7Xh5Vr94EXrb4wMM2SlED46rd-dosswanV0V9q7FMHZL7BHdt35Xx0evtSVDz0DOCF3oIn0RUInN7hyCZISyoGQjMsRZcUvVdT4BdJcWSMIN4OiFrN6wFbmQLHgTr8RdluAQD59Y1b3QHTdGEtohyhm9Lh87GnyY5qDdVpR6C7tuwCLe4eHqg4JYxAnlcjQf_xI4AnndlE5KBsV24euJtU"/>
+<div>
+<p class="text-sm font-semibold">Sarah Jenkins</p>
+<p class="text-xs text-slate-500">sarah.j@company.com</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<select class="mx-auto block bg-slate-50 dark:bg-slate-800 border-none rounded text-xs font-semibold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-primary min-w-[120px] py-1.5 cursor-pointer">
+<option>Owner</option>
+<option selected="">Admin</option>
+<option>Editor</option>
+<option>Viewer</option>
+</select>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                                                Active
+                                            </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-slate-400 hover:text-red-500 transition-colors">
+<span class="material-icons text-lg">delete_outline</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-slate-50 dark:hover:bg-primary/5 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<img alt="User" class="w-9 h-9 rounded-full ring-2 ring-transparent" data-alt="Male user portrait avatar profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBCEkJJzbD6oJHGRZBdYh-yfeCCbnKEiGOEn_yd7kYY__9FdmAFVhWi12XA8hF3Uvm4MO5WlOvPj8Nsrr8OihvVJYWDc-FBLM4Y4dnP1KssYU1df5CXtB4fVByIE-aob1py2jgoky5Ox4RK--lJILoHRPnh0BcHxEfMOlUQt2s6pL3_NknbZR7j1vdzNaFr9rba-f8AywHs_n2U89Nr-WOffAoYfEnkF9cpE9zgfQBn-tpcu8-XkOGFWRN2IZ1s7QoIQg30U1HefEs"/>
+<div>
+<p class="text-sm font-semibold">Mark Thompson</p>
+<p class="text-xs text-slate-500">mark.t@design.co</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<select class="mx-auto block bg-slate-50 dark:bg-slate-800 border-none rounded text-xs font-semibold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-primary min-w-[120px] py-1.5 cursor-pointer">
+<option>Owner</option>
+<option>Admin</option>
+<option selected="">Editor</option>
+<option>Viewer</option>
+</select>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400">
+                                                Away
+                                            </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-slate-400 hover:text-red-500 transition-colors">
+<span class="material-icons text-lg">delete_outline</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-slate-50 dark:hover:bg-primary/5 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
+<span class="material-icons text-slate-500 text-lg">person</span>
+</div>
+<div>
+<p class="text-sm font-semibold">Lisa Wong</p>
+<p class="text-xs text-slate-500">lisa.w@agency.com</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<select class="mx-auto block bg-slate-50 dark:bg-slate-800 border-none rounded text-xs font-semibold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-primary min-w-[120px] py-1.5 cursor-pointer">
+<option>Owner</option>
+<option>Admin</option>
+<option>Editor</option>
+<option selected="">Viewer</option>
+</select>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-500/10 text-slate-600 dark:text-slate-400">
+                                                Offline
+                                            </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-slate-400 hover:text-red-500 transition-colors">
+<span class="material-icons text-lg">delete_outline</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-4 bg-slate-50/50 dark:bg-slate-800/20 border-t border-slate-200 dark:border-primary/10 flex justify-center">
+<button class="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1 uppercase tracking-widest hover:text-primary transition-colors">
+                                Load More Members
+                                <span class="material-icons text-sm">expand_more</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Right: Roles Summary & Details (1/3 width) -->
+<div class="space-y-6">
+<div class="bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-primary/10 rounded-xl p-6 shadow-sm">
+<h3 class="font-semibold mb-4">Roles &amp; Permissions</h3>
+<div class="space-y-4">
+<div class="p-3 rounded-lg border border-slate-100 dark:border-primary/10 hover:border-primary/40 transition-colors bg-primary/5">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-icons text-primary text-sm">stars</span>
+<span class="font-bold text-sm">Owner</span>
+</div>
+<p class="text-xs text-slate-500">Full access to group settings, billing, and member management.</p>
+</div>
+<div class="p-3 rounded-lg border border-slate-100 dark:border-primary/10 hover:border-primary/40 transition-colors">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-icons text-slate-400 text-sm">admin_panel_settings</span>
+<span class="font-bold text-sm">Admin</span>
+</div>
+<p class="text-xs text-slate-500">Manage tasks and members, but cannot change billing or delete group.</p>
+</div>
+<div class="p-3 rounded-lg border border-slate-100 dark:border-primary/10 hover:border-primary/40 transition-colors">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-icons text-slate-400 text-sm">edit</span>
+<span class="font-bold text-sm">Editor</span>
+</div>
+<p class="text-xs text-slate-500">Can create, edit, and delete tasks. Cannot manage members.</p>
+</div>
+<div class="p-3 rounded-lg border border-slate-100 dark:border-primary/10 hover:border-primary/40 transition-colors">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-icons text-slate-400 text-sm">visibility</span>
+<span class="font-bold text-sm">Viewer</span>
+</div>
+<p class="text-xs text-slate-500">Read-only access to all tasks and group activity.</p>
+</div>
+</div>
+</div>
+<div class="bg-primary/10 border border-primary/20 rounded-xl p-6 relative overflow-hidden group">
+<div class="relative z-10">
+<h4 class="font-bold text-primary mb-2">Need a custom role?</h4>
+<p class="text-sm text-slate-600 dark:text-slate-400 mb-4 leading-relaxed">Upgrade to <b>Enterprise Plan</b> to create granular roles with custom permission sets.</p>
+<button class="bg-primary text-white text-xs font-bold py-2 px-4 rounded-lg uppercase tracking-wider hover:bg-primary/90 transition-all">Learn More</button>
+</div>
+<span class="material-icons absolute -bottom-4 -right-4 text-7xl text-primary/5 group-hover:scale-110 transition-transform">workspace_premium</span>
+</div>
+</div>
+</div>
+<!-- Detailed RBAC Matrix Section -->
+<section class="bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-primary/10 rounded-xl overflow-hidden shadow-sm">
+<div class="p-6 border-b border-slate-200 dark:border-primary/10">
+<h3 class="text-lg font-semibold mb-1">Permission Matrix</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400">Detailed breakdown of available capabilities per role.</p>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider">
+<tr>
+<th class="px-8 py-4 w-1/3">Permission</th>
+<th class="px-6 py-4 text-center">Owner</th>
+<th class="px-6 py-4 text-center">Admin</th>
+<th class="px-6 py-4 text-center">Editor</th>
+<th class="px-6 py-4 text-center">Viewer</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100 dark:divide-primary/5 text-sm">
+<tr class="hover:bg-slate-50 dark:hover:bg-primary/5">
+<td class="px-8 py-4 font-medium">Create/Edit Tasks</td>
+<td class="px-6 py-4 text-center"><span class="material-icons text-emerald-500">check_circle</span></td>
+<td class="px-6 py-4 text-center"><span class="material-icons text-emerald-500">check_circle</span></td>
+<td class="px-6 py-4 text-center"><span class="material-icons text-emerald-500">check_circle</span></td>
+<td class="px-6 py-4 text-center"><span class="material-icons text-slate-300 dark:text-slate-700">cancel</span></td>
+</tr>
+<tr class="hover:bg-slate-50 dark:hover:bg-primary/5">
+<td class="px-8 py-4 font-medium">Delete Tasks</td>
+<td class="px-6 py-4 text-center"><span class="material-icons text-emerald-500">check_circle</span></td>
+<td class="px-6 py-4 text-center"><span class="material-icons text-emerald-500">check_circle</span></td>
+<td class="px-6 py-4 text-center"><span class="material-icons text-slate-300 dark:text-slate-700">cancel</span></td>
+<td class="px-6 py-4 text-center"><span class="material-icons text-slate-300 dark:text-slate-700">cancel</span></td>
+</tr>
+<tr class="hover:bg-slate-50 dark:hover:bg-primary/5">
+<td class="px-8 py-4 font-medium">Invite Members</td>
+<td class="px-6 py-4 text-center"><span class="material-icons text-emerald-500">check_circle</span></td>
+<td class="px-6 py-4 text-center"><span class="material-icons text-emerald-500">check_circle</span></td>
+<td class="px-6 py-4 text-center"><span class="material-icons text-slate-300 dark:text-slate-700">cancel</span></td>
+<td class="px-6 py-4 text-center"><span class="material-icons text-slate-300 dark:text-slate-700">cancel</span></td>
+</tr>
+<tr class="hover:bg-slate-50 dark:hover:bg-primary/5">
+<td class="px-8 py-4 font-medium">Remove Members</td>
+<td class="px-6 py-4 text-center"><span class="material-icons text-emerald-500">check_circle</span></td>
+<td class="px-6 py-4 text-center"><span class="material-icons text-slate-300 dark:text-slate-700">cancel</span></td>
+<td class="px-6 py-4 text-center"><span class="material-icons text-slate-300 dark:text-slate-700">cancel</span></td>
+<td class="px-6 py-4 text-center"><span class="material-icons text-slate-300 dark:text-slate-700">cancel</span></td>
+</tr>
+<tr class="hover:bg-slate-50 dark:hover:bg-primary/5">
+<td class="px-8 py-4 font-medium">Change Billing Info</td>
+<td class="px-6 py-4 text-center"><span class="material-icons text-emerald-500">check_circle</span></td>
+<td class="px-6 py-4 text-center"><span class="material-icons text-slate-300 dark:text-slate-700">cancel</span></td>
+<td class="px-6 py-4 text-center"><span class="material-icons text-slate-300 dark:text-slate-700">cancel</span></td>
+<td class="px-6 py-4 text-center"><span class="material-icons text-slate-300 dark:text-slate-700">cancel</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+<!-- Footer -->
+<footer class="p-8 text-center text-slate-500 text-xs border-t border-slate-200 dark:border-primary/10">
+            © 2023 TaskFlow Collaboration Suite. Group ID: GRP-772-910
+        </footer>
+</main>
+<!-- Toast Notification Overlay -->
+<div class="fixed bottom-8 right-8 z-50 animate-bounce-short">
+<div class="bg-slate-900 dark:bg-primary text-white px-5 py-3 rounded-lg shadow-2xl flex items-center gap-3 border border-white/10">
+<span class="material-icons text-emerald-400">check_circle</span>
+<span class="text-sm font-medium">Sarah Jenkins promoted to Admin.</span>
+<button class="ml-4 text-white/60 hover:text-white">
+<span class="material-icons text-lg">close</span>
+</button>
+</div>
+</div>
+</body></html>

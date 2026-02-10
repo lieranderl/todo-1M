@@ -1,0 +1,23 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: secure-gateway-ingress
+  namespace: default
+spec:
+  endpointSelector:
+    matchLabels:
+      app: todo-gateway
+  ingress:
+  - toPorts:
+    - ports:
+      - port: "80"
+        protocol: TCP
+    rules:
+      http:
+      - method: "POST"
+        path: "/api/v1/command"
+        headers:
+        - "Authorization: Bearer .*"
+        # Note: In a real deployment, we would use a CiliumClusterwideEnvoyConfig 
+        # or properly configured JWT filter here. 
+        # This is a placeholder enforcing that the header exists.

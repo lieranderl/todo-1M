@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Group Workspace &amp; Kanban Board</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "primary": "#137fec",
+                "background-light": "#f6f7f8",
+                "background-dark": "#101922",
+              },
+              fontFamily: {
+                "display": ["Inter"]
+              },
+              borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+            },
+          },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen flex flex-col">
+<!-- Top Navigation Bar -->
+<header class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-background-dark/50 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-6">
+<div class="flex items-center gap-4">
+<div class="bg-primary p-2 rounded-lg">
+<span class="material-icons text-white">dashboard</span>
+</div>
+<div>
+<h1 class="font-bold text-lg leading-none">Product Design Sprint</h1>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Workspace / Q4 Roadmap</p>
+</div>
+</div>
+<div class="flex-1 max-w-xl px-12">
+<div class="relative group">
+<span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">search</span>
+<input class="w-full bg-slate-100 dark:bg-slate-900/50 border-transparent focus:border-primary focus:ring-1 focus:ring-primary rounded-xl py-2 pl-10 pr-4 text-sm transition-all outline-none" placeholder="Search tasks, members or files..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-500 hover:text-primary transition-colors relative">
+<span class="material-icons">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-background-dark"></span>
+</button>
+<div class="h-8 w-px bg-slate-200 dark:bg-slate-800 mx-1"></div>
+<div class="flex items-center gap-3 cursor-pointer group">
+<div class="text-right hidden md:block">
+<p class="text-sm font-medium leading-none">Alex Rivera</p>
+<p class="text-xs text-primary font-medium mt-1">Owner</p>
+</div>
+<img alt="User Avatar" class="w-10 h-10 rounded-full border-2 border-slate-200 dark:border-slate-800 group-hover:border-primary transition-all" data-alt="Close up portrait of a male designer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHXpiUZ6el8Pj6Hey7M6uHd5I084qOIpRBh2Dzrme2v2xqvI8SGokd1TV9uC9PPD8zmdCQNvZVpWv0XV1S9P2hBI3kKLSrERc8wQ-OQ0Ft8-zf1kWlf8rDXnXQ4aVA4dOiHE_azHNVfgLXU_fR-EGnNz3jy6HUiQsbIawH4aSBeR9ocmyX-p7knmUp2FOwAdsRr_dzqXDLyDnv8Nr1O4J0Pubgtmzg-CyvB0HNh7KTlSeimIhmjJaRkcpRqQCzz42MP9d6dT5gDuw"/>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- Main Board Area -->
+<main class="flex-1 overflow-x-auto overflow-y-hidden flex p-6 gap-6 custom-scrollbar">
+<!-- Column: To Do -->
+<div class="flex-shrink-0 w-80 flex flex-col h-full bg-slate-50/50 dark:bg-slate-900/30 rounded-xl border border-slate-200 dark:border-slate-800">
+<div class="p-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-800">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-slate-400"></span>
+<h2 class="font-semibold text-sm uppercase tracking-wider text-slate-500">To Do</h2>
+<span class="ml-2 px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-[10px] font-bold">4</span>
+</div>
+<button class="text-slate-400 hover:text-primary transition-colors">
+<span class="material-icons text-sm">add</span>
+</button>
+</div>
+<div class="p-3 flex-1 overflow-y-auto space-y-3 custom-scrollbar">
+<!-- Task Card -->
+<div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:border-primary transition-all cursor-grab active:cursor-grabbing group">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400">RESEARCH</span>
+<button class="text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity"><span class="material-icons text-sm">more_vert</span></button>
+</div>
+<h3 class="text-sm font-medium mb-4">Competitor analysis for mobile onboarding flow</h3>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1 text-xs text-slate-500">
+<span class="material-icons text-xs">calendar_today</span>
+<span>Oct 24</span>
+</div>
+<img alt="Assignee" class="w-6 h-6 rounded-full ring-2 ring-white dark:ring-slate-900" data-alt="Portrait of a female team member" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdcY36xxAWmbeBBsZf1rDu1SHl7wNMOOhlwa8KPTVtFcD7FgqIkoidBZkfC55FEz49kM8EJgGDaB6J4sasmMUkwi6wQJMZlu3uSC2IlGx7Xe_ucmH0_QTcsM9ZE5lO1v_Ns_cD6PCu1vbn29OggpTpUNqFk7kTi-Bc5Ug0AFo0Kudv00Ga-0KGFG5KbGFtAnjBGqZ_5v63kxh30kY1KFBr_NiG0Jnt6lSfG9Z8-T1rEdYaKkhb7ay1Xm3BatlbrcTWjBnj-6G5Bfg"/>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:border-primary transition-all cursor-grab group">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary">UI DESIGN</span>
+</div>
+<h3 class="text-sm font-medium mb-4">Drafting system icons for dashboard</h3>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1 text-xs text-slate-500">
+<span class="material-icons text-xs">calendar_today</span>
+<span>Oct 25</span>
+</div>
+<img alt="Assignee" class="w-6 h-6 rounded-full ring-2 ring-white dark:ring-slate-900" data-alt="Portrait of a male team member" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBO2IGz3eg95N_GYNyIwtIzSr6mO4Gq1siLDZLnLC7tA0JCsk_1DXDfr5RFW5vIPAg18jxMuoJiGBlFa591yNUumLQsCS8EV9fIA9avbgNPv4iLzS7jD9h8HI-D1A-o_YszTdTQ-Y022lg3Tqs6hconM5rmylM_88OdJqy2qZXa7LqwkdfuzY1H3yUrVU8ufnjOm4-A6cJyDeabHpE-XNtRIE5fGlR5HEM6Qf4nNOQB38Fq0Igxf6mxJwt4_313CeUKw7xQ3V2M3G4"/>
+</div>
+</div>
+<div class="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl p-4 flex items-center justify-center text-slate-400 text-xs">
+                        + Drop tasks here
+                    </div>
+</div>
+</div>
+<!-- Column: In Progress -->
+<div class="flex-shrink-0 w-80 flex flex-col h-full bg-slate-50/50 dark:bg-slate-900/30 rounded-xl border border-slate-200 dark:border-slate-800">
+<div class="p-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-800">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<h2 class="font-semibold text-sm uppercase tracking-wider text-slate-500">In Progress</h2>
+<span class="ml-2 px-2 py-0.5 rounded-full bg-primary/20 text-primary text-[10px] font-bold">2</span>
+</div>
+<button class="text-slate-400 hover:text-primary transition-colors">
+<span class="material-icons text-sm">add</span>
+</button>
+</div>
+<div class="p-3 flex-1 overflow-y-auto space-y-3 custom-scrollbar">
+<div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm border-l-4 border-l-primary hover:border-primary transition-all cursor-grab group">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">DEV</span>
+</div>
+<h3 class="text-sm font-medium mb-4">React component library integration</h3>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1 text-xs text-primary font-medium">
+<span class="material-icons text-xs">timer</span>
+<span>Due Tomorrow</span>
+</div>
+<div class="flex -space-x-2">
+<img alt="Assignee" class="w-6 h-6 rounded-full ring-2 ring-white dark:ring-slate-900" data-alt="Portrait of a developer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6HBb9aFlUslrknzF3JdYmjWwLCJjm1xR87C5ohzZFUJOb7TNE7kNOSF-MccAQMxILuu8GAhuEp6nO1eHaY8WDUIFM7hJmpLoXT6oBnW_gpejKM7Y5GY0dWSLJqj28-uteYdd0HWwzfgiJLEuDnYkpdZ8oGtCE5YP41E4sUqa7athvv6Eig3rcLdR-pGiZ-7blwVRMpShS8Zk0sZ4Cuj3zzMyJtHQ7tVZJbXdNusJl8rvtZkpA2GFtZPWo8Yvcg6GQzOP4qy4itAg"/>
+<img alt="Assignee" class="w-6 h-6 rounded-full ring-2 ring-white dark:ring-slate-900" data-alt="Portrait of a senior engineer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXTEtgDZMsVi5yEwHwzb2lh0EGFpk_Ge0WJyHGWgOLTY2g9e2wdslMTmVNL0SyvW1iVS3ElVGQxJWEoXWvzV_nFDwvAR154j13-azZCcai32p9BdazUGeQlSX4TdbPZZrGYp3DMQWSgQp8iGvlJ7xhUEKfMF5WYOUxPU8VbCLGItGd1R0apqkF_s7bed_eaQgf8RZWkFjKdTm8e8Ioa9X9sNHWGLAkXkbuku1Lorc9XL9zonSaAwc8MAWbuGMc40XyifW4igqa7gs"/>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Column: Done -->
+<div class="flex-shrink-0 w-80 flex flex-col h-full bg-slate-50/50 dark:bg-slate-900/30 rounded-xl border border-slate-200 dark:border-slate-800">
+<div class="p-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-800">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+<h2 class="font-semibold text-sm uppercase tracking-wider text-slate-500">Done</h2>
+<span class="ml-2 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">12</span>
+</div>
+</div>
+<div class="p-3 flex-1 overflow-y-auto space-y-3 custom-scrollbar opacity-60">
+<div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm line-through decoration-slate-400">
+<h3 class="text-sm font-medium mb-4 text-slate-500">Initial project kickoff meeting</h3>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1 text-xs text-slate-400">
+<span class="material-icons text-xs">check_circle</span>
+<span>Completed Oct 12</span>
+</div>
+<img alt="Assignee" class="w-6 h-6 rounded-full grayscale" data-alt="Portrait of Alex Rivera" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnvEcEPSLCogMZnHRJQ_yFkZwk_T11LH1Jccdiw6tbf09PLOsBQQEVAHznJZOa7XogAffxZgw07GCJmXiKZ7KNqd0eDpcVlMFF6NpEfEAqRwVtz1fmyQ9FbnrDPa4XNbukSP4mdXGxc6nr9iGwyGlEC5kTdamWVwmmW-g_gl7BEDk4FkLfy40sNvo3S8F1ooX0lzIgyiZwXGJEsSeV2bC0OBW9A6crmAvD5b8F9YWu5qdpQCw1HyXrTn2uLP8gZOyPUwY_dGMeJTs"/>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Right Sidebar: Members & RBAC -->
+<aside class="w-80 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark/80 backdrop-blur-sm flex flex-col">
+<div class="p-6 border-b border-slate-200 dark:border-slate-800">
+<div class="flex items-center justify-between mb-6">
+<h2 class="font-bold text-lg">Members</h2>
+<span class="bg-primary/10 text-primary px-2 py-1 rounded-lg text-xs font-bold uppercase">Admin View</span>
+</div>
+<button class="w-full bg-primary hover:bg-primary/90 text-white rounded-xl py-2.5 px-4 flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/20">
+<span class="material-icons text-sm">person_add</span>
+<span class="text-sm font-semibold">Add New Member</span>
+</button>
+</div>
+<div class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+<p class="px-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">Owner &amp; Admins</p>
+<!-- Member Item -->
+<div class="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+<div class="flex items-center gap-3">
+<div class="relative">
+<img alt="Member" class="w-9 h-9 rounded-full ring-2 ring-emerald-500 ring-offset-2 ring-offset-white dark:ring-offset-background-dark" data-alt="Portrait of Alex Rivera" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCso9mWnLSMvQa3j2n3GoJcjc-HM1cQBTJtBcsU21ohcmYsv94paeMJshWtVuPoBvmYgcY_9ZLd8eL3JVUUPmz-5mkFvV-oZ0FMVGZlK8o7FOM8HF6xeqJmbRFSWGrB7l4JI_LkOGlC-LDytteQqsTEaRKHTZuazaI4LFIZPcF0cKVRIe5FM691hPwFYL3NSN3si2Tt1bVt-F3jojk3G8qr6wKNIGLJCJZl_o8QzyXZ_gKCTYiE8k02wGp9yB4Wv_OMbVIQqlFNCK4"/>
+<span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white dark:border-background-dark"></span>
+</div>
+<div>
+<p class="text-sm font-medium">Alex Rivera</p>
+<p class="text-[10px] text-slate-500">You • Workspace Owner</p>
+</div>
+</div>
+<button class="p-1.5 text-slate-400 hover:text-primary rounded-lg hover:bg-primary/10 transition-all">
+<span class="material-icons text-base">verified_user</span>
+</button>
+</div>
+<div class="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+<div class="flex items-center gap-3">
+<div class="relative">
+<img alt="Member" class="w-9 h-9 rounded-full" data-alt="Portrait of Sarah Chen" src="https://lh3.googleusercontent.com/aida-public/AB6AXuARPSTbiu7ulLeMX2ISBvD_nEEsTncVHX42i_S5_KrDFesBp2GB1ykMKcQjeRWAZOGVFnPxNUuZELX4eJCvMRUO8Jx4M-I8o0K_lbz4QdKCsRX_qjKnxqCH6IBRs-GtbhMiq5-Yz8IwAoBWoSFiwC09pU5krX6EKwtOZA42_IkAAoJ8UYC1mfYm0O2tjmek3k6UdLwmieCu3uwRiYU7RqC_7yKseVWjlWJ6wHXwiOm32NHJB2OU3bN2JwCE7saWuOUkhX8EQejcM80"/>
+<span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white dark:border-background-dark"></span>
+</div>
+<div>
+<p class="text-sm font-medium">Sarah Chen</p>
+<p class="text-[10px] text-slate-500">Senior Lead • Admin</p>
+</div>
+</div>
+<button class="p-1.5 text-slate-400 hover:text-primary rounded-lg hover:bg-primary/10 transition-all">
+<span class="material-icons text-base">admin_panel_settings</span>
+</button>
+</div>
+<p class="px-2 pt-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Collaborators</p>
+<div class="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+<div class="flex items-center gap-3">
+<div class="relative">
+<img alt="Member" class="w-9 h-9 rounded-full" data-alt="Portrait of Michael Jordan" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDu2B-pCAwGINCADn7c74BKYVYSsjcZ027EquRtdWAnb5hAV26mdchbuHNZrYwH4lV8uUt_wybTU9_DXnmtRsnSMGiuLQFa_Qi4_buFmPSbAJWddCVDtwio0rFs8pfi4YTMhiKSqgNP7V7frwCu6HKkSR5OL1U3BQsyapm8Cz5DAfscEpD2rzEChnkx7wJVSAnmNbRMD79qDkADyyBQeF2alz6K9rifo0i2cdYwvu8KmTYzHVeoGmQSbrXz6uSJeX8VSqwEhCaivM8"/>
+<span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-slate-400 rounded-full border-2 border-white dark:border-background-dark"></span>
+</div>
+<div>
+<p class="text-sm font-medium">Michael J.</p>
+<p class="text-[10px] text-slate-500">Product Designer</p>
+</div>
+</div>
+<button class="p-1.5 text-slate-400 hover:text-primary rounded-lg hover:bg-primary/10 transition-all">
+<span class="material-icons text-base">manage_accounts</span>
+</button>
+</div>
+<div class="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+<div class="flex items-center gap-3">
+<div class="relative">
+<img alt="Member" class="w-9 h-9 rounded-full" data-alt="Portrait of Emily Watson" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnSBbJW1FCtOOe2N_BtVSml2d_5iYUVp4Wm_hZBbBPoNgZqusi1Dnm3-L9AqFuNM2YpulH-BseBuX_qroPrf-J8IiqDuxKQZKWtWWAzwq4nC4S1ljz7a9MwJUt8oRlRnz5rsumt-oN8ayTHv6D2HNpmbq5NgbfV2MNiX52Eoh9KMM2s_0dTHCiSDwF4uw_gXQoT04xC23qbfFWq1eFcCzUqwy8zSdMPqXXXEH3JTsvAx9gA5NfUBADck9L7lKb8nigwJS1BN9ik_w"/>
+<span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white dark:border-background-dark"></span>
+</div>
+<div>
+<p class="text-sm font-medium">Emily Watson</p>
+<p class="text-[10px] text-slate-500">Content Strategist</p>
+</div>
+</div>
+<button class="p-1.5 text-slate-400 hover:text-primary rounded-lg hover:bg-primary/10 transition-all">
+<span class="material-icons text-base">manage_accounts</span>
+</button>
+</div>
+</div>
+<div class="p-6 bg-slate-50 dark:bg-slate-900/50">
+<div class="flex items-center justify-between text-xs text-slate-500 mb-2">
+<span>Storage Usage</span>
+<span class="font-bold">78%</span>
+</div>
+<div class="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 78%"></div>
+</div>
+<p class="text-[10px] text-slate-400 mt-2">15.6 GB of 20 GB used</p>
+</div>
+</aside>
+</div>
+<!-- Floating Action for Mobile/Smaller View (Simulated) -->
+<div class="fixed bottom-6 right-86 lg:right-[340px] z-40">
+<button class="bg-primary hover:bg-primary/90 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-xl shadow-primary/30 transition-transform active:scale-95 group">
+<span class="material-icons group-hover:rotate-90 transition-transform">add</span>
+</button>
+</div>
+</body></html>
