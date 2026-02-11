@@ -503,30 +503,24 @@ func renderGroupsList(groups []identity.GroupMembership, activeGroupID string) s
 			name = "Untitled group"
 		}
 
-		buttonClass := "btn btn-ghost btn-sm h-9 w-full min-w-0 justify-start gap-2 overflow-hidden normal-case"
+		nameClass := "block w-full min-w-0 rounded-lg px-3 py-2 text-left leading-tight text-base-content"
 		if group.GroupID == activeGroupID {
-			buttonClass += " btn-active"
+			nameClass += " bg-base-300/50"
 		}
 
 		sb.WriteString(`<li class="list-row items-center">`)
 		sb.WriteString(`<div class="list-col-grow min-w-0">`)
-		sb.WriteString(`<button class="`)
-		sb.WriteString(html.EscapeString(buttonClass))
-		sb.WriteString(`" data-group-id="`)
-		sb.WriteString(html.EscapeString(group.GroupID))
-		sb.WriteString(`" data-group-name="`)
+		sb.WriteString(`<label class="`)
+		sb.WriteString(html.EscapeString(nameClass))
+		sb.WriteString(`">`)
+		sb.WriteString(`<span class="block truncate">`)
 		sb.WriteString(html.EscapeString(name))
-		sb.WriteString(`" data-group-role="`)
+		sb.WriteString(`</span><span class="text-xs text-base-content/70">`)
 		sb.WriteString(html.EscapeString(group.Role))
-		sb.WriteString(`" data-on:click="@setAll(evt.currentTarget.dataset.groupId, {include: /^active_group_id$/}); @setAll(evt.currentTarget.dataset.groupRole, {include: /^active_group_role$/}); @setAll(evt.currentTarget.dataset.groupId, {include: /^connected_group_id$/}); @setAll(evt.currentTarget.dataset.groupName, {include: /^connected_group_name$/}); @get('/ui/workspace?group_id=' + evt.currentTarget.dataset.groupId, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}}); @get('/events?group_id=' + evt.currentTarget.dataset.groupId + '&token=' + $access_token, {openWhenHidden: true, filterSignals: {include: /^$/}})">`)
-		sb.WriteString(`<span class="truncate">`)
-		sb.WriteString(html.EscapeString(name))
-		sb.WriteString(`</span><span class="badge badge-ghost badge-sm">`)
-		sb.WriteString(html.EscapeString(group.Role))
-		sb.WriteString(`</span></button>`)
+		sb.WriteString(`</span></label>`)
 		sb.WriteString(`</div>`)
 
-		sb.WriteString(`<button class="btn btn-sm btn-secondary btn-outline w-24" data-group-id="`)
+		sb.WriteString(`<button class="btn btn-sm btn-secondary btn-outline w-24" data-connect-btn="1" data-group-id="`)
 		sb.WriteString(html.EscapeString(group.GroupID))
 		sb.WriteString(`" data-group-name="`)
 		sb.WriteString(html.EscapeString(name))

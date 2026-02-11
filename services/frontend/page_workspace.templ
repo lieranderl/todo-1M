@@ -44,7 +44,7 @@ templ WorkspacePage() {
 							return;
 						}
 
-							const connectButtons = Array.from(document.querySelectorAll("#groups-list button[data-group-id][data-group-name]"));
+						const connectButtons = Array.from(document.querySelectorAll("#groups-list button[data-connect-btn='1'][data-group-id][data-group-name]"));
 							if (connectButtons.length === 0) {
 								const groupsListText = (document.getElementById("groups-list")?.textContent || "").toLowerCase();
 								if (groupsListText.includes("no groups yet")) {

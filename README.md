@@ -41,8 +41,8 @@ A high-performance, event-driven Todo application designed for 1 million concurr
 | `GET` | `/events/disconnect?token=...` | Query token | Cancel active SSE stream for current user |
 
 Notes:
-- Group row click in UI performs selection + `/ui/workspace` refresh and opens `/events`.
-- `Connect` button also opens `/events` stream for the target group.
+- Group name/role label is non-interactive.
+- `Connect` button is the only control that opens `/events` stream for a group.
 
 ## System Diagram (End-to-End)
 ```mermaid
@@ -100,8 +100,8 @@ sequenceDiagram
 2. Creator is auto-added as `owner`.
 3. `owner/admin` can add members (`POST /api/v1/groups/{groupID}/members`).
 4. Only `owner` can promote/demote role (`PATCH /api/v1/groups/{groupID}/members/role`).
-5. Clicking a group row sets active + connected group and opens SSE subscription (`/events?group_id=...`).
-6. Clicking `Connect` explicitly connects to the target group as well.
+5. Group label is display-only (no click behavior).
+6. Clicking `Connect` sets active group and starts/switches SSE subscription via `/events?group_id=...`.
 7. Membership is enforced on both read (`/api/v1/groups`, `/api/v1/todos`, `/ui/workspace`, `/events`) and write (`/api/v1/command`) paths.
 
 ### RBAC Matrix
@@ -152,7 +152,7 @@ sequenceDiagram
 - Feed updates are pushed immediately from event stream.
 - Todo board reads from projected read model (`todos` table).
 - SSE subscribes to group-scoped NATS subjects (`app.event.*.group.<group_id>`).
-- Selecting a different group in the list switches active + connected group and rebinds stream.
+- Selecting a different group in the list updates active group/read model only.
 - `Connect` explicitly establishes/switches the stream for the target group.
 - `/events/disconnect` cancels the current user stream when switching groups or clearing a connected group.
 - UI consumes `todo-event` and performs short retry-based reconciliation with projection offsets, so newly created/updated/deleted items appear consistently even under projection lag.
@@ -238,10 +238,10 @@ Logs are written to `.runtime/logs` and service PID files to `.runtime/pids`.
 2. Register or login from `/login`.
 3. You are redirected to `/app` (authenticated workspace).
 4. Create a group.
-5. Click a group row and verify it becomes the connected realtime group.
+5. Confirm group label is display-only (no click behavior).
 6. Click `Connect` on any row and verify connection switches to that group.
 7. Send todo commands (create, edit, delete) and verify instant board updates.
-8. Switch to another group row and verify active + connected group switch together.
+8. Click `Connect` on a different group and verify selection/read model/realtime stream switch together.
 9. Toggle `Show Realtime Feed` on/off and verify feed panel behavior.
 10. Use `Refresh Token` and `Logout` from toolbar.
 11. Watch logs of `domain-engine`, `data-sink`, and `sse-streamer` for command -> event -> projection -> query/stream flow.
