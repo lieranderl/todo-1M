@@ -1,6 +1,6 @@
-.PHONY: all tidy test test-integration build predeploy predeploy-full run-infra run-services clean clean-local templ verify prepare-runtime wait-infra stop-services run-all stop-all
+.PHONY: all tidy css test test-integration build predeploy predeploy-full run-infra run-services clean clean-local templ verify prepare-runtime wait-infra stop-services run-all stop-all
 
-all: tidy templ test
+all: tidy css templ test
 
 RUNTIME_DIR := .runtime
 LOG_DIR := $(RUNTIME_DIR)/logs
@@ -14,6 +14,9 @@ SINK_PID := $(PID_DIR)/sink.pid
 
 tidy:
 	go mod tidy
+
+css:
+	npm run build:css
 
 templ:
 	# Installs templ if not present (requires GOBIN to be in PATH)
@@ -92,7 +95,7 @@ stop-services:
 	@pkill -f "cmd/data-sink/main.go" >/dev/null 2>&1 || true
 	@rm -f $(COMMAND_PID) $(STREAMER_PID) $(ENGINE_PID) $(SINK_PID)
 
-run-all: stop-services run-infra wait-infra templ build
+run-all: stop-services run-infra wait-infra css templ build
 	@echo "Starting all services..."
 	@nohup ./bin/command-api > $(LOG_DIR)/command.log 2>&1 & echo $$! > $(COMMAND_PID)
 	@nohup ./bin/sse-streamer > $(LOG_DIR)/streamer.log 2>&1 & echo $$! > $(STREAMER_PID)

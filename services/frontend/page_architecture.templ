@@ -1,0 +1,61 @@
+package frontend
+
+templ ArchitecturePage() {
+	<!DOCTYPE html>
+	<html lang="en" data-theme="night">
+		@AppHead("Todo-1M · Overview")
+		<body
+			class="min-h-screen"
+			data-signals="{api_base: window.location.origin.replace(':8081', ':8080').replace(':18081', ':18080'), access_token: localStorage.getItem('todo_access_token') || '', refresh_token: localStorage.getItem('todo_refresh_token') || '', username: localStorage.getItem('todo_username') || '', user_id: localStorage.getItem('todo_user_id') || ''}"
+		>
+			<div data-show="!$access_token">
+				@AuthGuard("Checking session...")
+			</div>
+			<div data-effect="!$access_token && window.location.assign('/login')"></div>
+			@PersistAuthEffects()
+
+				<div id="architecture-shell" class="min-h-screen" data-show="$access_token">
+					<div class="min-h-screen lg:grid lg:grid-cols-[16.5rem_minmax(0,1fr)]">
+						@AppSidebar("overview")
+
+						<div class="flex min-w-0 flex-col">
+							@AppNavbar("Group Overview", "Dashboard snapshot of your collaboration system.", false)
+
+							<main class="grid gap-4 p-4 md:gap-5 md:p-5 lg:p-6">
+							<div id="session-notice" class="alert alert-warning text-sm" hidden aria-hidden="true"></div>
+							<section class="grid grid-cols-1 gap-3 md:grid-cols-3">
+								@WorkspaceMetric("Groups", "Live", "Group-scoped read and write paths", "groups", "border-primary/50")
+								@WorkspaceMetric("Users", "RBAC", "owner/admin/member enforcement", "admin_panel_settings", "border-info/50")
+								@WorkspaceMetric("Events", "JetStream", "Durable event history and replay", "hive", "border-success/50")
+							</section>
+
+							<section class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+								@ArchitectureServiceCard("Command API", "Validates JWT, enforces group role permissions, receives command intents.", "input", "border-primary/50")
+								@ArchitectureServiceCard("Domain Engine", "Applies business rules and transforms commands into domain events.", "hub", "border-info/50")
+								@ArchitectureServiceCard("Data Sink", "Persists events and updates read projections by group.", "database", "border-success/50")
+								@ArchitectureServiceCard("SSE Streamer", "Serves query endpoints and pushes Datastar live patches.", "stream", "border-warning/50")
+							</section>
+
+							<section class="card card-border bg-base-100/85 shadow">
+								<div class="card-body p-4 gap-4">
+									<div class="space-y-1">
+										<h2 class="card-title text-lg text-base-content">Message Flow</h2>
+										<p class="text-sm text-base-content/70">Every mutation follows one durable path from command to consistent read model.</p>
+									</div>
+										<ul class="steps steps-vertical w-full">
+											<li class="step step-primary">Client sends command</li>
+											<li class="step step-primary">API validates auth + RBAC</li>
+											<li class="step">Event stored in JetStream</li>
+											<li class="step">Projection catches up</li>
+											<li class="step">SSE refreshes UI safely</li>
+										</ul>
+									</div>
+								</section>
+						</main>
+					</div>
+				</div>
+			</div>
+		</body>
+	</html>
+}
+

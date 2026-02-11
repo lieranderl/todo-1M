@@ -1,5 +1,6 @@
 # Build artifacts
 bin/
+node_modules/
 
 # Runtime artifacts
 *.log

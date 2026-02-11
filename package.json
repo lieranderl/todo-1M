@@ -1,0 +1,19 @@
+{
+  "name": "todo-1m",
+  "version": "1.0.0",
+  "description": "A high-performance, event-driven Todo application designed for 1 million concurrent users, running on Hetzner Bare Metal.",
+  "main": "index.js",
+  "scripts": {
+    "build:css": "tailwindcss -i ./services/frontend/static/styles.input.css -o ./services/frontend/static/styles.css --minify",
+    "watch:css": "tailwindcss -i ./services/frontend/static/styles.input.css -o ./services/frontend/static/styles.css --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.18",
+    "daisyui": "^5.5.18",
+    "tailwindcss": "^4.1.18"
+  }
+}

@@ -1,0 +1,71 @@
+package frontend
+
+templ LoginPage() {
+	<!DOCTYPE html>
+	<html lang="en" data-theme="night">
+		@AppHead("Todo-1M · Login")
+		<body
+			class="min-h-screen"
+			data-signals="{api_base: window.location.origin.replace(':8081', ':8080').replace(':18081', ':18080'), login_username: '', login_password: '', access_token: localStorage.getItem('todo_access_token') || '', refresh_token: localStorage.getItem('todo_refresh_token') || '', username: localStorage.getItem('todo_username') || '', user_id: localStorage.getItem('todo_user_id') || ''}"
+		>
+			<div data-effect="$access_token && window.location.assign('/app')"></div>
+			<main class="hero min-h-screen px-4 py-6 lg:px-8 lg:py-10">
+				<div class="hero-content w-full max-w-7xl flex-col gap-6 p-0 lg:flex-row lg:items-stretch">
+					<section class="card w-full overflow-hidden border border-white/15 bg-base-200/35 shadow-2xl lg:w-[58%]">
+						<div class="relative min-h-[20rem] lg:min-h-[34rem]">
+							<img
+								src="https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=1800&q=80"
+								alt="Modern workspace"
+								class="absolute inset-0 h-full w-full object-cover"
+							/>
+							<div class="absolute inset-0 bg-gradient-to-b from-slate-950/45 via-slate-950/55 to-slate-950/85"></div>
+							<div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(56,189,248,.28),transparent_46%)]"></div>
+							<div class="relative z-10 flex h-full flex-col justify-end gap-4 p-6 lg:p-10">
+								<div class="inline-flex w-fit items-center gap-3 rounded-xl border border-white/12 bg-slate-900/45 px-3 py-2">
+									<div class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500"><span class="material-icons text-white text-[18px]">task_alt</span></div>
+									<div class="text-white font-bold tracking-tight">Todo-1M Workspace</div>
+								</div>
+								<h1 class="m-0 text-3xl font-extrabold leading-tight text-white lg:text-5xl">Collaborative teams, real-time updates, clean event-driven architecture.</h1>
+								<p class="m-0 max-w-2xl text-sm text-slate-200/90 lg:text-base">Local-first microservices with command/query separation, RBAC, and Datastar-enhanced UX.</p>
+								<div class="mt-1 grid grid-cols-1 gap-3 sm:grid-cols-3">
+									@LoginFeatureCard("Command", "CQRS Write", "Auth + validation", "text-cyan-300")
+									@LoginFeatureCard("Bus", "NATS JetStream", "Durable ordered events", "text-blue-300")
+									@LoginFeatureCard("Read", "SSE + Datastar", "Projection-safe rendering", "text-emerald-300")
+								</div>
+							</div>
+						</div>
+					</section>
+
+					<section class="card w-full border border-base-300/50 bg-base-100/90 shadow-2xl lg:w-[42%]">
+						<div class="card-body gap-4 p-5 lg:p-7">
+							<div class="space-y-1">
+								<h2 class="m-0 text-3xl font-extrabold text-base-content">Welcome back</h2>
+								<p class="m-0 text-sm text-base-content/70">Sign in to continue to your team workspace.</p>
+							</div>
+
+							<div class="space-y-3">
+								<label class="form-control w-full">
+									<div class="label pb-1"><span class="label-text text-xs font-semibold uppercase tracking-wider text-base-content/80">Username</span></div>
+									<input id="login-username" class="input input-bordered input-lg w-full" type="text" placeholder="e.g. team-lead" data-bind:login_username data-on:keydown="event.key === 'Enter' && @post($api_base + '/api/v1/auth/login', {payload: {username: $login_username, password: $login_password}, filterSignals: {include: /^$/}})"/>
+								</label>
+								<label class="form-control w-full">
+									<div class="label pb-1"><span class="label-text text-xs font-semibold uppercase tracking-wider text-base-content/80">Password</span></div>
+									<input id="login-password" class="input input-bordered input-lg w-full" type="password" placeholder="Minimum 8 characters" data-bind:login_password data-on:keydown="event.key === 'Enter' && @post($api_base + '/api/v1/auth/login', {payload: {username: $login_username, password: $login_password}, filterSignals: {include: /^$/}})"/>
+								</label>
+							</div>
+
+							<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+								<button id="login-btn" class="btn btn-primary btn-lg w-full" data-indicator:auth_busy data-attr:disabled="$auth_busy" data-on:click="@post($api_base + '/api/v1/auth/login', {payload: {username: $login_username, password: $login_password}, filterSignals: {include: /^$/}})">Login</button>
+								<button id="register-btn" class="btn btn-outline btn-secondary btn-lg w-full" data-indicator:auth_busy data-attr:disabled="$auth_busy" data-on:click="@post($api_base + '/api/v1/auth/register', {payload: {username: $login_username, password: $login_password}, filterSignals: {include: /^$/}})">Register</button>
+							</div>
+
+							<p id="login-status" class="min-h-6 text-sm text-error" data-text="$error || ''"></p>
+						</div>
+					</section>
+				</div>
+			</main>
+			@PersistAuthEffects()
+		</body>
+	</html>
+}
+

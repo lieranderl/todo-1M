@@ -336,6 +336,28 @@ func main() {
 		}
 	})
 
+	mux.HandleFunc("/events/disconnect", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		token := strings.TrimSpace(r.URL.Query().Get("token"))
+		if token == "" {
+			http.Error(w, "token is required", http.StatusUnauthorized)
+			return
+		}
+
+		claims, err := tokenManager.Parse(token)
+		if err != nil {
+			http.Error(w, "invalid token", http.StatusUnauthorized)
+			return
+		}
+
+		userStreams.Cancel(claims.Subject)
+		w.WriteHeader(http.StatusNoContent)
+	})
+
 	fmt.Printf("SSE Streamer listening on %s\n", streamerAddr)
 	log.Fatal(http.ListenAndServe(streamerAddr, mux))
 }
@@ -378,6 +400,19 @@ func (r *userStreamRegistry) Release(userID, streamID string) {
 		return
 	}
 	delete(r.byUser, userID)
+}
+
+func (r *userStreamRegistry) Cancel(userID string) {
+	r.mu.Lock()
+	lease, ok := r.byUser[userID]
+	if ok {
+		delete(r.byUser, userID)
+	}
+	r.mu.Unlock()
+
+	if ok && lease.cancel != nil {
+		lease.cancel()
+	}
 }
 
 func waitForIdentitySchema(ctx context.Context, repo *identity.PostgresRepository, timeout time.Duration) error {
@@ -455,10 +490,10 @@ func cssAttrSelector(id, attr, value string) string {
 
 func renderGroupsList(groups []identity.GroupMembership, activeGroupID string) string {
 	var sb strings.Builder
-	sb.WriteString(`<ul id="groups-list" class="menu group-list bg-base-200/60 rounded-box border border-base-300/40 p-2 max-h-64 overflow-auto">`)
+	sb.WriteString(`<ul id="groups-list" class="list bg-base-200/60 rounded-box border border-base-300/40 p-2 max-h-64 overflow-auto">`)
 
 	if len(groups) == 0 {
-		sb.WriteString(`<li class="text-sm text-base-content/60 px-3 py-2">No groups yet. Create one to start collaborating.</li></ul>`)
+		sb.WriteString(`<li class="list-row text-sm text-base-content/60">No groups yet. Create one to start collaborating.</li></ul>`)
 		return sb.String()
 	}
 
@@ -468,38 +503,45 @@ func renderGroupsList(groups []identity.GroupMembership, activeGroupID string) s
 			name = "Untitled group"
 		}
 
-		buttonClass := "w-full text-left rounded-lg px-3 py-2 hover:bg-base-300/40 transition-colors"
+		buttonClass := "btn btn-ghost btn-sm h-9 w-full min-w-0 justify-start gap-2 overflow-hidden normal-case"
 		if group.GroupID == activeGroupID {
-			buttonClass += " bg-base-300/50"
+			buttonClass += " btn-active"
 		}
 
-		sb.WriteString(`<li><div class="group-row">`)
-		sb.WriteString(`<button class="group-name-btn `)
+		sb.WriteString(`<li class="list-row items-center">`)
+		sb.WriteString(`<div class="list-col-grow min-w-0">`)
+		sb.WriteString(`<button class="`)
 		sb.WriteString(html.EscapeString(buttonClass))
 		sb.WriteString(`" data-group-id="`)
 		sb.WriteString(html.EscapeString(group.GroupID))
-		sb.WriteString(`" data-group-role="`)
-		sb.WriteString(html.EscapeString(group.Role))
-		sb.WriteString(`" data-on:click="@setAll(evt.currentTarget.dataset.groupId, {include: /^active_group_id$/}); @setAll(evt.currentTarget.dataset.groupRole, {include: /^active_group_role$/}); @get('/ui/workspace?group_id=' + evt.currentTarget.dataset.groupId, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})">`)
+		sb.WriteString(`" data-group-name="`)
 		sb.WriteString(html.EscapeString(name))
-		sb.WriteString(` [`)
-		sb.WriteString(html.EscapeString(group.Role))
-		sb.WriteString(`]</button>`)
-
-		sb.WriteString(`<button class="btn btn-sm btn-secondary btn-outline group-action-btn" data-group-id="`)
-		sb.WriteString(html.EscapeString(group.GroupID))
 		sb.WriteString(`" data-group-role="`)
 		sb.WriteString(html.EscapeString(group.Role))
-		sb.WriteString(`" data-on:click="@setAll(evt.currentTarget.dataset.groupId, {include: /^active_group_id$/}); @setAll(evt.currentTarget.dataset.groupRole, {include: /^active_group_role$/}); @get('/ui/workspace?group_id=' + evt.currentTarget.dataset.groupId, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}}); @get('/events?group_id=' + evt.currentTarget.dataset.groupId + '&token=' + $access_token, {openWhenHidden: true, filterSignals: {include: /^$/}})">Connect</button>`)
+		sb.WriteString(`" data-on:click="@setAll(evt.currentTarget.dataset.groupId, {include: /^active_group_id$/}); @setAll(evt.currentTarget.dataset.groupRole, {include: /^active_group_role$/}); @setAll(evt.currentTarget.dataset.groupId, {include: /^connected_group_id$/}); @setAll(evt.currentTarget.dataset.groupName, {include: /^connected_group_name$/}); @get('/ui/workspace?group_id=' + evt.currentTarget.dataset.groupId, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}}); @get('/events?group_id=' + evt.currentTarget.dataset.groupId + '&token=' + $access_token, {openWhenHidden: true, filterSignals: {include: /^$/}})">`)
+		sb.WriteString(`<span class="truncate">`)
+		sb.WriteString(html.EscapeString(name))
+		sb.WriteString(`</span><span class="badge badge-ghost badge-sm">`)
+		sb.WriteString(html.EscapeString(group.Role))
+		sb.WriteString(`</span></button>`)
+		sb.WriteString(`</div>`)
+
+		sb.WriteString(`<button class="btn btn-sm btn-secondary btn-outline w-24" data-group-id="`)
+		sb.WriteString(html.EscapeString(group.GroupID))
+		sb.WriteString(`" data-group-name="`)
+		sb.WriteString(html.EscapeString(name))
+		sb.WriteString(`" data-group-role="`)
+		sb.WriteString(html.EscapeString(group.Role))
+		sb.WriteString(`" data-on:click="@setAll(evt.currentTarget.dataset.groupId, {include: /^active_group_id$/}); @setAll(evt.currentTarget.dataset.groupRole, {include: /^active_group_role$/}); @setAll(evt.currentTarget.dataset.groupId, {include: /^connected_group_id$/}); @setAll(evt.currentTarget.dataset.groupName, {include: /^connected_group_name$/}); @get('/ui/workspace?group_id=' + evt.currentTarget.dataset.groupId, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}}); @get('/events?group_id=' + evt.currentTarget.dataset.groupId + '&token=' + $access_token, {openWhenHidden: true, filterSignals: {include: /^$/}})">Connect</button>`)
 
 		if group.Role == identity.RoleOwner {
-			sb.WriteString(`<button class="btn btn-sm btn-error btn-outline group-action-btn" data-indicator:delete_group_busy data-attr:disabled="$delete_group_busy" data-group-id="`)
+			sb.WriteString(`<button class="btn btn-sm btn-error btn-outline w-24" data-indicator:delete_group_busy data-attr:disabled="$delete_group_busy" data-group-id="`)
 			sb.WriteString(html.EscapeString(group.GroupID))
-			sb.WriteString(`" data-on:click="evt.stopPropagation(); @setAll(true, {include: /^groups_dirty$/}); @setAll((evt.currentTarget.dataset.groupId === $active_group_id) ? '' : $active_group_id, {include: /^active_group_id$/}); @setAll((evt.currentTarget.dataset.groupId === $active_group_id) ? '' : $active_group_role, {include: /^active_group_role$/}); @delete($api_base + '/api/v1/groups/' + evt.currentTarget.dataset.groupId, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})">Delete</button>`)
+			sb.WriteString(`" data-on:click="evt.stopPropagation(); @setAll(true, {include: /^groups_dirty$/}); @setAll((evt.currentTarget.dataset.groupId === $active_group_id) ? '' : $active_group_id, {include: /^active_group_id$/}); @setAll((evt.currentTarget.dataset.groupId === $active_group_id) ? '' : $active_group_role, {include: /^active_group_role$/}); @setAll((evt.currentTarget.dataset.groupId === $connected_group_id) ? '' : $connected_group_id, {include: /^connected_group_id$/}); @setAll((evt.currentTarget.dataset.groupId === $connected_group_id) ? '' : $connected_group_name, {include: /^connected_group_name$/}); evt.currentTarget.dataset.groupId === $connected_group_id && @get('/events/disconnect?token=' + $access_token, {filterSignals: {include: /^$/}}); @delete($api_base + '/api/v1/groups/' + evt.currentTarget.dataset.groupId, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})">Delete</button>`)
 		} else {
-			sb.WriteString(`<span class="group-action-spacer" aria-hidden="true"></span>`)
+			sb.WriteString(`<span class="btn btn-sm btn-ghost w-24 invisible" aria-hidden="true">Delete</span>`)
 		}
-		sb.WriteString(`</div></li>`)
+		sb.WriteString(`</li>`)
 	}
 
 	sb.WriteString(`</ul>`)
@@ -532,8 +574,8 @@ func renderTodoList(todos []query.TodoView, actorUserID, role, activeGroupID str
 		canEdit := canModerate || todo.CreatedByUserID == actorUserID
 		inputID := "todo-edit-" + todo.TodoID
 
-		sb.WriteString(`<div class="card todo-card bg-base-100 border border-base-300/60 shadow"><div class="card-body p-4 gap-3">`)
-		sb.WriteString(`<div class="todo-card-head">`)
+		sb.WriteString(`<div class="card bg-base-100 border border-base-300/60 shadow"><div class="card-body p-4 gap-3">`)
+		sb.WriteString(`<div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">`)
 		sb.WriteString(`<div><div class="font-semibold text-base-content text-base">`)
 		sb.WriteString(html.EscapeString(todo.Title))
 		sb.WriteString(`</div><div class="text-xs text-base-content/70 mt-1">`)
@@ -541,18 +583,18 @@ func renderTodoList(todos []query.TodoView, actorUserID, role, activeGroupID str
 		sb.WriteString(`</div></div>`)
 
 		if canEdit {
-			sb.WriteString(`<div class="todo-item-actions">`)
+			sb.WriteString(`<div class="grid w-full gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center lg:max-w-[28rem]">`)
 			sb.WriteString(`<input id="`)
 			sb.WriteString(html.EscapeString(inputID))
-			sb.WriteString(`" class="input input-bordered input-sm todo-edit-input" type="text" value="`)
+			sb.WriteString(`" class="input input-bordered input-sm w-full min-w-0" type="text" value="`)
 			sb.WriteString(html.EscapeString(todo.Title))
 			sb.WriteString(`"/>`)
-			sb.WriteString(`<button class="btn btn-sm btn-outline todo-edit-btn" data-todo-id="`)
+			sb.WriteString(`<button class="btn btn-sm btn-outline" data-todo-id="`)
 			sb.WriteString(html.EscapeString(todo.TodoID))
 			sb.WriteString(`" data-input-id="`)
 			sb.WriteString(html.EscapeString(inputID))
 			sb.WriteString(`" data-on:click="@post($api_base + '/api/v1/command', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {action: 'update-todo', title: document.getElementById(evt.currentTarget.dataset.inputId).value, group_id: $active_group_id, todo_id: evt.currentTarget.dataset.todoId}, filterSignals: {include: /^$/}}); @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})">Save</button>`)
-			sb.WriteString(`<button class="btn btn-sm btn-error btn-outline todo-edit-btn" data-todo-id="`)
+			sb.WriteString(`<button class="btn btn-sm btn-error btn-outline" data-todo-id="`)
 			sb.WriteString(html.EscapeString(todo.TodoID))
 			sb.WriteString(`" data-on:click="@post($api_base + '/api/v1/command', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {action: 'delete-todo', title: '', group_id: $active_group_id, todo_id: evt.currentTarget.dataset.todoId}, filterSignals: {include: /^$/}}); @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})">Delete</button>`)
 			sb.WriteString(`</div>`)

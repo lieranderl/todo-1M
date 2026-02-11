@@ -1,0 +1,83 @@
+package frontend
+
+templ AuthGuard(message string) {
+	<div id="auth-guard" class="min-h-screen flex items-center justify-center p-4">
+		<div class="card card-border bg-base-100/85 shadow-xl w-full max-w-md">
+			<div class="card-body place-items-center text-center gap-3 p-8">
+				<span class="loading loading-spinner loading-lg text-info"></span>
+				<p class="text-base-content/70">{ message }</p>
+			</div>
+		</div>
+	</div>
+}
+
+templ SideNavItem(href string, label string, icon string, active bool) {
+	<li>
+		<a href={ href } class={ "gap-3", templ.KV("active", active) }>
+			<span class="material-icons text-[18px]">{ icon }</span>
+			<span>{ label }</span>
+		</a>
+	</li>
+}
+
+templ AppSidebar(active string) {
+	<aside class="hidden lg:flex lg:flex-col border-r border-base-300/40 bg-base-100/40 px-4 py-4">
+		<div class="flex items-center gap-3 p-2">
+			<div class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500">
+				<span class="material-icons text-white text-[18px]">task_alt</span>
+			</div>
+			<div>
+				<div class="text-base font-bold text-base-content">Todo-1M</div>
+				<div class="text-[11px] text-base-content/65">Datastar + CQRS</div>
+			</div>
+		</div>
+		<nav class="mt-2">
+			<ul class="menu menu-md rounded-box bg-base-200/35 p-1">
+				@SideNavItem("/app", "Workspace", "dashboard", active == "workspace")
+				@SideNavItem("/architecture", "Overview", "analytics", active == "overview")
+				@SideNavItem("/settings", "Group Settings", "settings_suggest", active == "settings")
+			</ul>
+		</nav>
+		<div class="mt-auto rounded-xl border border-info/25 bg-info/10 p-3">
+			<div class="text-[11px] uppercase tracking-wider font-bold text-info">Architecture</div>
+			<div class="mt-1 text-xs leading-relaxed text-base-content/75">NATS JetStream events, CQRS projections, SSE stream and RBAC write guards.</div>
+		</div>
+	</aside>
+}
+
+templ AppNavbar(title string, subtitle string, withRefresh bool) {
+	<header class="sticky top-0 z-10 border-b border-base-300/40 bg-base-100/70 backdrop-blur">
+		<div class="navbar min-h-0 px-4 py-3 md:px-5">
+			<div class="navbar-start min-w-0">
+				<div class="min-w-0">
+					<div class="text-lg leading-tight font-bold text-base-content md:text-xl">{ title }</div>
+					<div class="truncate text-xs text-base-content/70 md:text-sm">{ subtitle }</div>
+				</div>
+			</div>
+			<div class="navbar-end flex-wrap gap-2">
+				<div id="toolbar-user" class="badge badge-neutral badge-lg" data-text="$username || 'user'"></div>
+				if withRefresh {
+					<button id="refresh-btn" class="btn btn-sm btn-outline btn-info" data-indicator:refresh_busy data-attr:disabled="$refresh_busy" data-on:click="@post($api_base + '/api/v1/auth/refresh', {payload: {refresh_token: $refresh_token}, filterSignals: {include: /^$/}})">Refresh Token</button>
+				}
+				@LogoutButton("logout-btn")
+			</div>
+		</div>
+	</header>
+}
+
+templ PersistAuthEffects() {
+	<div data-effect="$access_token && (localStorage.setItem('todo_access_token', $access_token), window.dispatchEvent(new Event('todo-auth-updated')))"></div>
+	<div data-effect="$refresh_token && (localStorage.setItem('todo_refresh_token', $refresh_token), window.dispatchEvent(new Event('todo-auth-updated')))"></div>
+	<div data-effect="$username && localStorage.setItem('todo_username', $username)"></div>
+	<div data-effect="$user_id && localStorage.setItem('todo_user_id', $user_id)"></div>
+}
+
+templ LogoutButton(buttonID string) {
+	<button
+		id={ buttonID }
+		class="btn btn-sm btn-error"
+		data-on:click="@post($api_base + '/api/v1/auth/logout', {payload: {refresh_token: $refresh_token}, filterSignals: {include: /^$/}}); @setAll('', {include: /^(access_token|refresh_token|username|user_id|active_group_id|connected_group_id|connected_group_name)$/}); localStorage.removeItem('todo_access_token'); localStorage.removeItem('todo_refresh_token'); localStorage.removeItem('todo_username'); localStorage.removeItem('todo_user_id'); localStorage.removeItem('todo_active_group'); localStorage.removeItem('todo_connected_group'); localStorage.removeItem('todo_connected_group_name'); window.location.assign('/login')"
+	>
+		Logout
+	</button>
+}

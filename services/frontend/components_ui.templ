@@ -1,0 +1,46 @@
+package frontend
+
+templ WorkspaceMetric(title string, value string, subtitle string, icon string, tone string) {
+	<div class={ "stat rounded-box border border-base-300/60 bg-base-100/85 shadow " + tone }>
+		<div class="stat-figure text-base-content/80">
+			<span class="material-icons text-[18px]">{ icon }</span>
+		</div>
+		<div class="stat-title">{ title }</div>
+		<div class="stat-value text-xl">{ value }</div>
+		<div class="stat-desc">{ subtitle }</div>
+	</div>
+}
+
+
+templ LoginFeatureCard(kicker string, title string, subtitle string, kickerClass string) {
+	<div class="card card-border bg-base-100/35 backdrop-blur-sm border-white/20">
+		<div class="card-body p-3 gap-1">
+			<div class={ "text-[11px] uppercase tracking-widest font-semibold " + kickerClass }>{ kicker }</div>
+			<div class="card-title text-lg text-white">{ title }</div>
+			<div class="text-xs text-slate-300/80">{ subtitle }</div>
+		</div>
+	</div>
+}
+
+
+templ ArchitectureServiceCard(title string, subtitle string, icon string, tone string) {
+	<div class={ "card card-border bg-base-100/85 shadow " + tone }>
+		<div class="card-body p-4 gap-2">
+			<div class="flex items-center gap-2">
+				<div class="inline-grid h-8 w-8 place-items-center rounded-lg border border-base-300/60 bg-base-200/60 text-base-content/80"><span class="material-icons text-[18px]">{ icon }</span></div>
+				<h3 class="card-title text-base text-base-content">{ title }</h3>
+			</div>
+			<p class="text-sm text-base-content/70">{ subtitle }</p>
+		</div>
+	</div>
+}
+
+
+templ EventItem(msg string, subtitle string) {
+	<div class="chat chat-start">
+		<div class="chat-bubble bg-info text-info-content shadow border border-info/30">
+			<p class="font-semibold leading-tight">{ msg }</p>
+			<p class="text-xs opacity-80 mt-1">{ subtitle }</p>
+		</div>
+	</div>
+}
