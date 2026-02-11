@@ -219,44 +219,7 @@ If `Cross-Origin Request Blocked` appears with `status code: (null)`, treat it a
 
 ### Kubernetes Deployment Quickstart
 
-#### Option A: No GitHub Repo (Local Images, Recommended for now)
-
-1. Build images locally:
-   ```bash
-   # use linux/arm64 for arm64 clusters (for example Docker Desktop k8s on Apple Silicon)
-   docker build --platform linux/amd64 -f Dockerfile --build-arg SERVICE=command-api -t todo-1m/command-api:latest .
-   docker build --platform linux/amd64 -f Dockerfile --build-arg SERVICE=sse-streamer -t todo-1m/sse-streamer:latest .
-   docker build --platform linux/amd64 -f Dockerfile --build-arg SERVICE=domain-engine -t todo-1m/domain-engine:latest .
-   docker build --platform linux/amd64 -f Dockerfile --build-arg SERVICE=data-sink -t todo-1m/data-sink:latest .
-   ```
-
-2. If you use `kind`, load images into the cluster:
-   ```bash
-   kind load docker-image todo-1m/command-api:latest
-   kind load docker-image todo-1m/sse-streamer:latest
-   kind load docker-image todo-1m/domain-engine:latest
-   kind load docker-image todo-1m/data-sink:latest
-   ```
-
-3. Create application secrets:
-   ```bash
-   # set a strong random value for jwt-secret before apply
-   kubectl apply -f infrastructure/k8s/06-app-secrets.example.yaml
-   ```
-
-4. Apply manifests:
-   ```bash
-   kubectl apply -f infrastructure/nats/01-nats-cluster.yaml
-   kubectl apply -f infrastructure/cnpg/01-cluster.yaml
-   kubectl apply -f infrastructure/k8s/01-gateway-class.yaml
-   kubectl apply -f infrastructure/k8s/02-gateway.yaml
-   kubectl apply -f infrastructure/k8s/03-http-route.yaml
-   kubectl apply -f infrastructure/k8s/04-jwt-policy.yaml
-   kubectl kustomize infrastructure/k8s/local --load-restrictor=LoadRestrictionsNone | kubectl apply -f -
-   kubectl apply -f infrastructure/k8s/07-scalability.yaml
-   ```
-
-#### Option B: GHCR (when repo exists)
+#### GHCR
 
 1. Build/push images:
    ```bash
