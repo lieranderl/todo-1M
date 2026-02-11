@@ -64,6 +64,14 @@ func (f *fakeIdentityRepo) CreateGroup(ctx context.Context, group identity.Group
 	f.members[group.ID][creatorUserID] = identity.RoleOwner
 	return nil
 }
+func (f *fakeIdentityRepo) DeleteGroup(ctx context.Context, groupID string) error {
+	if _, ok := f.groups[groupID]; !ok {
+		return identity.ErrNotFound
+	}
+	delete(f.groups, groupID)
+	delete(f.members, groupID)
+	return nil
+}
 func (f *fakeIdentityRepo) AddUserToGroupWithRole(ctx context.Context, groupID, userID, role string) error {
 	if f.members[groupID] == nil {
 		f.members[groupID] = map[string]string{}
@@ -279,6 +287,49 @@ func TestUpdateCommandForbiddenForNonOwner(t *testing.T) {
 	}
 }
 
+func TestDeleteGroup_OwnerAllowed(t *testing.T) {
+	handler, identitySvc := newHandlerForTests()
+	token, err := identitySvc.AuthToken.Sign("u1", "alice")
+	if err != nil {
+		t.Fatalf("failed to sign token: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/groups/g1", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rr := httptest.NewRecorder()
+	handler.Router().ServeHTTP(rr, req)
+	if rr.Code != http.StatusNoContent {
+		t.Fatalf("expected 204, got %d body=%s", rr.Code, rr.Body.String())
+	}
+}
+
+func TestDeleteGroup_NonOwnerForbidden(t *testing.T) {
+	repo := newFakeIdentityRepo()
+	repo.users["u2"] = identity.User{ID: "u2", Username: "bob", PasswordHash: "$2a$10$Qdv1fOD2vEUCA6cQbjHqUecFp4Pw1nJ7l/SXxPxq8np5xpoE2mR9a"}
+	repo.members["g1"] = map[string]string{"u2": identity.RoleMember}
+	repo.groups["g1"] = identity.Group{ID: "g1", Name: "Group 1"}
+
+	mgr := platformauth.NewManager("secret", time.Hour)
+	mgr.Now = func() time.Time { return time.Date(2026, 2, 10, 0, 0, 0, 0, time.UTC) }
+	identitySvc := identity.NewService(repo, mgr)
+
+	svc := NewService(func(_ string, _ []byte) error { return nil })
+	handler := NewHandler(svc, identitySvc, fakeTodoReader{items: map[string]query.TodoView{}}, "http://localhost:8081")
+
+	token, err := identitySvc.AuthToken.Sign("u2", "bob")
+	if err != nil {
+		t.Fatalf("token sign error: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/groups/g1", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rr := httptest.NewRecorder()
+	handler.Router().ServeHTTP(rr, req)
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("expected 403, got %d body=%s", rr.Code, rr.Body.String())
+	}
+}
+
 func TestOptions_HasCORSHeaders(t *testing.T) {
 	handler, _ := newHandlerForTests()
 
@@ -290,6 +341,22 @@ func TestOptions_HasCORSHeaders(t *testing.T) {
 		t.Fatalf("expected 204, got %d", rr.Code)
 	}
 	if got := rr.Header().Get("Access-Control-Allow-Origin"); got != "http://localhost:8081" {
+		t.Fatalf("unexpected CORS origin: %q", got)
+	}
+}
+
+func TestOptions_ReflectsEquivalentLoopbackOrigin(t *testing.T) {
+	handler, _ := newHandlerForTests()
+
+	req := httptest.NewRequest(http.MethodOptions, "/api/v1/command", nil)
+	req.Header.Set("Origin", "http://127.0.0.1:8081")
+	rr := httptest.NewRecorder()
+	handler.Router().ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusNoContent {
+		t.Fatalf("expected 204, got %d", rr.Code)
+	}
+	if got := rr.Header().Get("Access-Control-Allow-Origin"); got != "http://127.0.0.1:8081" {
 		t.Fatalf("unexpected CORS origin: %q", got)
 	}
 }

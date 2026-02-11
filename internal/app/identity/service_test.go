@@ -19,6 +19,7 @@ type fakeRepo struct {
 	findErr    error
 	memberErr  error
 	addUserErr error
+	deleteErr  error
 }
 
 func newFakeRepo() *fakeRepo {
@@ -71,6 +72,18 @@ func (f *fakeRepo) CreateGroup(ctx context.Context, group Group, creatorUserID s
 		f.members[group.ID] = map[string]string{}
 	}
 	f.members[group.ID][creatorUserID] = RoleOwner
+	return nil
+}
+
+func (f *fakeRepo) DeleteGroup(ctx context.Context, groupID string) error {
+	if f.deleteErr != nil {
+		return f.deleteErr
+	}
+	if _, ok := f.groups[groupID]; !ok {
+		return ErrNotFound
+	}
+	delete(f.groups, groupID)
+	delete(f.members, groupID)
 	return nil
 }
 
@@ -250,5 +263,23 @@ func TestUpdateRoleRequiresOwner(t *testing.T) {
 	repo.members["g1"]["u1"] = RoleAdmin
 	if err := svc.UpdateMemberRoleByUsername(context.Background(), "u1", "g1", "bob", RoleMember); !errors.Is(err, ErrForbiddenRole) {
 		t.Fatalf("expected ErrForbiddenRole, got %v", err)
+	}
+}
+
+func TestDeleteGroupRequiresOwner(t *testing.T) {
+	repo := newFakeRepo()
+	repo.groups["g1"] = Group{ID: "g1", Name: "Group"}
+	repo.members["g1"] = map[string]string{"u1": RoleOwner, "u2": RoleMember}
+
+	svc := NewService(repo, testTokenManager())
+
+	if err := svc.DeleteGroup(context.Background(), "u2", "g1"); !errors.Is(err, ErrForbiddenRole) {
+		t.Fatalf("expected ErrForbiddenRole, got %v", err)
+	}
+	if err := svc.DeleteGroup(context.Background(), "u1", "g1"); err != nil {
+		t.Fatalf("DeleteGroup error: %v", err)
+	}
+	if _, ok := repo.groups["g1"]; ok {
+		t.Fatalf("expected group g1 to be deleted")
 	}
 }

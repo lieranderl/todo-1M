@@ -11,6 +11,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -202,6 +203,158 @@ func TestTodoEditDeleteProjectionAndActorInfo(t *testing.T) {
 	}
 
 	waitForTodoAbsent(t, stack.streamURL, token, groupID, createResp.TodoID, 10*time.Second)
+}
+
+func TestWorkspacePageBootstrapsWithOneShotEffect(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	stack := startLocalStack(t)
+	page := getAppPage(t, stack.streamURL)
+
+	if !strings.Contains(page, "window.location.origin.replace(':8081', ':8080').replace(':18081', ':18080')") {
+		t.Fatalf("workspace page missing dynamic api_base signal")
+	}
+	if !strings.Contains(page, "workspace_bootstrapped: false") {
+		t.Fatalf("workspace page missing workspace_bootstrapped signal")
+	}
+	if !strings.Contains(page, `data-effect="$access_token && !$workspace_bootstrapped && (`) {
+		t.Fatalf("workspace page missing one-shot data-effect bootstrap for group loading")
+	}
+	if !strings.Contains(page, `@get('/ui/workspace?group_id=' + $active_group_id`) {
+		t.Fatalf("workspace page bootstrap missing workspace GET action")
+	}
+	if !strings.Contains(page, `@setAll(true, {include: /^workspace_bootstrapped$/})`) {
+		t.Fatalf("workspace page bootstrap missing workspace_bootstrapped setAll")
+	}
+	if !strings.Contains(page, `@get('/ui/workspace?group_id=' + $active_group_id`) ||
+		!strings.Contains(page, `@setAll(true, {include: /^workspace_bootstrapped$/})`) {
+		t.Fatalf("workspace page bootstrap should use comma-operator action chain with fetch-before-flag order")
+	}
+	if strings.Index(page, `@setAll(true, {include: /^workspace_bootstrapped$/})`) < strings.Index(page, `@get('/ui/workspace?group_id=' + $active_group_id`) {
+		t.Fatalf("workspace page bootstrap sets workspace_bootstrapped before fetching workspace")
+	}
+	if strings.Contains(page, `$access_token && !$workspace_bootstrapped && (@get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}}), ($active_group_id && @get('/events?group_id=' + $active_group_id + '&token=' + $access_token`) {
+		t.Fatalf("workspace bootstrap should not auto-open events stream before explicit group connect/select")
+	}
+	if strings.Contains(page, "@setAll(true, {include: /^workspace_bootstrapped$/}); @get('/ui/workspace?group_id=' + $active_group_id") {
+		t.Fatalf("workspace page bootstrap still uses invalid semicolon action chain inside parenthesized expression")
+	}
+	if strings.Contains(page, `data-init="$access_token && @get('/ui/workspace?group_id=' + $active_group_id`) {
+		t.Fatalf("workspace page still uses data-init bootstrap instead of one-shot data-effect")
+	}
+	if strings.Contains(page, `data-on:load="$access_token && @get('/ui/workspace?group_id=' + $active_group_id`) {
+		t.Fatalf("workspace page still uses data-on:load bootstrap instead of one-shot data-effect")
+	}
+}
+
+func TestWorkspaceFragmentUsesGroupNamesAndSelectionBinding(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	stack := startLocalStack(t)
+	token, activeGroupID := bootstrapUserAndGroup(t, stack.commandURL)
+	secondGroupName := fmt.Sprintf("name-check-%d", time.Now().UnixNano())
+	secondGroupID := createGroup(t, stack.commandURL, token, secondGroupName)
+	if secondGroupID == "" {
+		t.Fatal("expected non-empty second group id")
+	}
+
+	fragment := getWorkspaceFragment(t, stack.streamURL, token, activeGroupID)
+
+	if !strings.Contains(fragment, secondGroupName+" [owner]") {
+		t.Fatalf("workspace groups list does not render group name label: %q", secondGroupName)
+	}
+	if !strings.Contains(fragment, `data-group-id="`+secondGroupID+`"`) {
+		t.Fatalf("workspace groups list missing group id dataset binding for %q", secondGroupID)
+	}
+	if !strings.Contains(fragment, `@setAll(evt.currentTarget.dataset.groupId, {include: /^active_group_id$/})`) {
+		t.Fatalf("workspace groups list missing evt.currentTarget-based active_group_id assignment")
+	}
+	if strings.Contains(fragment, "this.dataset.groupId") {
+		t.Fatalf("workspace groups list still uses unsupported this.dataset.groupId")
+	}
+	if !strings.Contains(fragment, `@get('/ui/workspace?group_id=' + evt.currentTarget.dataset.groupId`) {
+		t.Fatalf("workspace groups list missing selected-group fetch expression")
+	}
+}
+
+func TestWorkspaceFragmentUsesSafeTodoButtonBindings(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	stack := startLocalStack(t)
+	token, groupID := bootstrapUserAndGroup(t, stack.commandURL)
+
+	title := fmt.Sprintf("todo-bindings-%d", time.Now().UnixNano())
+	status, body := postCommand(t, stack.commandURL, token, groupID, title)
+	if status != http.StatusAccepted {
+		t.Fatalf("unexpected response status=%d body=%s", status, body)
+	}
+	waitForPersistedRow(t, stack.databaseURL, groupID, title, 20*time.Second, stack.processes()...)
+
+	fragment := getWorkspaceFragment(t, stack.streamURL, token, groupID)
+	if !strings.Contains(fragment, title) {
+		t.Fatalf("workspace todos fragment missing created todo title %q", title)
+	}
+	if !strings.Contains(fragment, "evt.currentTarget.dataset.inputId") {
+		t.Fatalf("workspace todo update action missing evt.currentTarget.dataset.inputId")
+	}
+	if !strings.Contains(fragment, "evt.currentTarget.dataset.todoId") {
+		t.Fatalf("workspace todo actions missing evt.currentTarget.dataset.todoId")
+	}
+	if strings.Contains(fragment, "this.dataset.inputId") || strings.Contains(fragment, "this.dataset.todoId") {
+		t.Fatalf("workspace todo actions still use unsupported this.dataset bindings")
+	}
+}
+
+func TestDeleteGroupOwnerOnlyAndWorkspaceRefresh(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	stack := startLocalStack(t)
+	ownerToken, ownerGroupID := bootstrapUserAndGroup(t, stack.commandURL)
+	memberToken, memberUsername := registerUserAndGetToken(t, stack.commandURL, "member")
+	addMemberToGroup(t, stack.commandURL, ownerToken, ownerGroupID, memberUsername)
+
+	status, body := deleteGroup(t, stack.commandURL, memberToken, ownerGroupID)
+	if status != http.StatusForbidden {
+		t.Fatalf("expected member delete to be forbidden status=%d body=%s", status, body)
+	}
+
+	deleteGroupName := fmt.Sprintf("delete-me-%d", time.Now().UnixNano())
+	deleteGroupID := createGroup(t, stack.commandURL, ownerToken, deleteGroupName)
+	if deleteGroupID == "" {
+		t.Fatalf("expected non-empty group id for deletable group")
+	}
+
+	before := getWorkspaceFragment(t, stack.streamURL, ownerToken, ownerGroupID)
+	if !strings.Contains(before, deleteGroupName+" [owner]") {
+		t.Fatalf("expected workspace fragment to include deletable group name %q", deleteGroupName)
+	}
+	if !strings.Contains(before, "@delete($api_base + '/api/v1/groups/' + evt.currentTarget.dataset.groupId") {
+		t.Fatalf("expected workspace fragment to include delete group datastar action")
+	}
+
+	status, body = deleteGroup(t, stack.commandURL, ownerToken, deleteGroupID)
+	if status != http.StatusNoContent {
+		t.Fatalf("owner delete failed status=%d body=%s", status, body)
+	}
+
+	after := getWorkspaceFragment(t, stack.streamURL, ownerToken, ownerGroupID)
+	if strings.Contains(after, deleteGroupName+" [owner]") {
+		t.Fatalf("workspace fragment still contains deleted group name %q", deleteGroupName)
+	}
+	groups := listGroups(t, stack.commandURL, ownerToken)
+	for _, g := range groups {
+		if g.GroupID == deleteGroupID {
+			t.Fatalf("deleted group %q still present in list groups response", deleteGroupID)
+		}
+	}
 }
 
 func startLocalStack(t *testing.T) *localStack {
@@ -429,6 +582,118 @@ func postCommand(t *testing.T, commandURL string, token string, groupID string, 
 	})
 }
 
+func deleteGroup(t *testing.T, commandURL string, token string, groupID string) (int, string) {
+	t.Helper()
+	req, err := http.NewRequest(
+		http.MethodDelete,
+		strings.TrimSuffix(commandURL, "/api/v1/command")+"/api/v1/groups/"+url.PathEscape(groupID),
+		nil,
+	)
+	if err != nil {
+		t.Fatalf("create delete group request failed: %v", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	client := &http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("delete group failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("read delete group body failed: %v", err)
+	}
+	return resp.StatusCode, body
+}
+
+func listGroups(t *testing.T, commandURL, token string) []struct {
+	GroupID   string `json:"group_id"`
+	GroupName string `json:"group_name"`
+	Role      string `json:"role"`
+} {
+	t.Helper()
+	req, err := http.NewRequest(
+		http.MethodGet,
+		strings.TrimSuffix(commandURL, "/api/v1/command")+"/api/v1/groups",
+		nil,
+	)
+	if err != nil {
+		t.Fatalf("create list groups request failed: %v", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	client := &http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("list groups failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("read list groups body failed: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("list groups failed status=%d body=%s", resp.StatusCode, body)
+	}
+
+	var parsed struct {
+		Groups []struct {
+			GroupID   string `json:"group_id"`
+			GroupName string `json:"group_name"`
+			Role      string `json:"role"`
+		} `json:"groups"`
+	}
+	if err := json.Unmarshal([]byte(body), &parsed); err != nil {
+		t.Fatalf("invalid list groups JSON: %v body=%s", err, body)
+	}
+	return parsed.Groups
+}
+
+func createGroup(t *testing.T, commandURL string, token string, name string) string {
+	t.Helper()
+
+	reqBytes, err := json.Marshal(map[string]string{"name": name})
+	if err != nil {
+		t.Fatalf("marshal create group payload failed: %v", err)
+	}
+	req, err := http.NewRequest(
+		http.MethodPost,
+		strings.TrimSuffix(commandURL, "/api/v1/command")+"/api/v1/groups",
+		bytes.NewBuffer(reqBytes),
+	)
+	if err != nil {
+		t.Fatalf("create group request failed: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	client := &http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("create group failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("read create group body failed: %v", err)
+	}
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("create group failed status=%d body=%s", resp.StatusCode, body)
+	}
+
+	var parsed struct {
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal([]byte(body), &parsed); err != nil {
+		t.Fatalf("invalid create group JSON: %v body=%s", err, body)
+	}
+	return parsed.ID
+}
+
 func postCommandBody(t *testing.T, commandURL string, token string, payload map[string]any) (int, string) {
 	t.Helper()
 	reqBytes, err := json.Marshal(payload)
@@ -505,6 +770,59 @@ func getTodos(t *testing.T, streamURL, token, groupID string) []struct {
 		t.Fatalf("invalid get todos JSON: %v body=%s", err, body)
 	}
 	return parsed.Todos
+}
+
+func getWorkspaceFragment(t *testing.T, streamURL, token, groupID string) string {
+	t.Helper()
+
+	base := strings.TrimSuffix(streamURL, "/events")
+	fragmentURL := base + "/ui/workspace?group_id=" + url.QueryEscape(groupID)
+	req, err := http.NewRequest(http.MethodGet, fragmentURL, nil)
+	if err != nil {
+		t.Fatalf("create workspace fragment request failed: %v", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	client := &http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("get workspace fragment failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("read workspace fragment body failed: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("workspace fragment failed status=%d body=%s", resp.StatusCode, body)
+	}
+	return body
+}
+
+func getAppPage(t *testing.T, streamURL string) string {
+	t.Helper()
+
+	req, err := http.NewRequest(http.MethodGet, strings.TrimSuffix(streamURL, "/events")+"/app", nil)
+	if err != nil {
+		t.Fatalf("create app page request failed: %v", err)
+	}
+
+	client := &http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("get app page failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("read app page body failed: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("app page failed status=%d body=%s", resp.StatusCode, body)
+	}
+	return body
 }
 
 func waitForTodoTitle(t *testing.T, streamURL, token, groupID, todoID, title string, timeout time.Duration) {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -49,6 +50,7 @@ func (h *Handler) Router() http.Handler {
 		authR.Use(h.authMiddleware)
 		authR.Get("/api/v1/groups", h.handleListGroups)
 		authR.Post("/api/v1/groups", h.handleCreateGroup)
+		authR.Delete("/api/v1/groups/{groupID}", h.handleDeleteGroup)
 		authR.Post("/api/v1/groups/{groupID}/members", h.handleAddMember)
 		authR.Patch("/api/v1/groups/{groupID}/members/role", h.handleUpdateMemberRole)
 		authR.Post("/api/v1/command", h.handleCreateCommand)
@@ -188,6 +190,26 @@ func (h *Handler) handleCreateGroup(w http.ResponseWriter, r *http.Request) {
 	h.writeJSON(w, http.StatusCreated, group)
 }
 
+func (h *Handler) handleDeleteGroup(w http.ResponseWriter, r *http.Request) {
+	groupID := chi.URLParam(r, "groupID")
+	claims := claimsFromContext(r.Context())
+	err := h.Identity.DeleteGroup(r.Context(), claims.Subject, groupID)
+	if err != nil {
+		switch {
+		case errors.Is(err, identity.ErrInvalidGroupID):
+			h.writeError(w, http.StatusBadRequest, err.Error())
+		case errors.Is(err, identity.ErrForbiddenGroup), errors.Is(err, identity.ErrForbiddenRole):
+			h.writeError(w, http.StatusForbidden, err.Error())
+		case errors.Is(err, identity.ErrNotFound):
+			h.writeError(w, http.StatusNotFound, "group not found")
+		default:
+			h.writeError(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *Handler) handleAddMember(w http.ResponseWriter, r *http.Request) {
 	groupID := chi.URLParam(r, "groupID")
 	var req addMemberRequest
@@ -301,8 +323,8 @@ func (h *Handler) handleCreateCommand(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Vary", "Origin, Access-Control-Request-Headers")
-		w.Header().Set("Access-Control-Allow-Origin", h.AllowedOrigin)
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Origin", h.allowedOriginForRequest(r.Header.Get("Origin")))
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
 
 		requestHeaders := strings.TrimSpace(r.Header.Get("Access-Control-Request-Headers"))
 		if requestHeaders != "" {
@@ -312,6 +334,55 @@ func (h *Handler) corsMiddleware(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (h *Handler) allowedOriginForRequest(requestOrigin string) string {
+	allowed := strings.TrimSpace(h.AllowedOrigin)
+	if allowed == "" {
+		return "*"
+	}
+	if allowed == "*" {
+		return allowed
+	}
+
+	origin := strings.TrimSpace(requestOrigin)
+	if origin == "" {
+		return allowed
+	}
+	if origin == allowed {
+		return origin
+	}
+	if isEquivalentLoopbackOrigin(origin, allowed) {
+		return origin
+	}
+	return allowed
+}
+
+func isEquivalentLoopbackOrigin(originA, originB string) bool {
+	a, err := url.Parse(originA)
+	if err != nil {
+		return false
+	}
+	b, err := url.Parse(originB)
+	if err != nil {
+		return false
+	}
+	if !isLoopbackHost(a.Hostname()) || !isLoopbackHost(b.Hostname()) {
+		return false
+	}
+	if a.Port() != b.Port() {
+		return false
+	}
+	return strings.EqualFold(a.Scheme, b.Scheme)
+}
+
+func isLoopbackHost(host string) bool {
+	switch strings.ToLower(strings.TrimSpace(host)) {
+	case "localhost", "127.0.0.1", "::1":
+		return true
+	default:
+		return false
+	}
 }
 
 type claimsContextKey struct{}

@@ -29,20 +29,20 @@ func AppHead(title string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><meta name=\"todo-api-base\" content=\"http://localhost:8080\"><meta name=\"todo-query-base\" content=\"http://localhost:8081\"><title>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 7, Col: 16}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 9, Col: 16}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><link href=\"https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css\" rel=\"stylesheet\" type=\"text/css\"><link rel=\"preconnect\" href=\"https://fonts.googleapis.com\"><link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin=\"anonymous\"><link href=\"https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Manrope:wght@400;500;600;700&display=swap\" rel=\"stylesheet\"><link href=\"https://fonts.googleapis.com/icon?family=Material+Icons\" rel=\"stylesheet\"><style>\n\t\t\t:root {\n\t\t\t\t--app-bg-1: #050816;\n\t\t\t\t--app-bg-2: #0a132b;\n\t\t\t\t--app-bg-3: #111c38;\n\t\t\t\t--glow-a: rgba(34, 211, 238, 0.18);\n\t\t\t\t--glow-b: rgba(59, 130, 246, 0.16);\n\t\t\t\t--glow-c: rgba(16, 185, 129, 0.12);\n\t\t\t}\n\t\t\tbody {\n\t\t\t\tfont-family: \"Manrope\", sans-serif;\n\t\t\t\tbackground:\n\t\t\t\t\tradial-gradient(circle at 12% 0%, var(--glow-a), transparent 36%),\n\t\t\t\t\tradial-gradient(circle at 92% 8%, var(--glow-b), transparent 34%),\n\t\t\t\t\tradial-gradient(circle at 50% 100%, var(--glow-c), transparent 45%),\n\t\t\t\t\tlinear-gradient(160deg, var(--app-bg-1), var(--app-bg-2) 42%, var(--app-bg-3));\n\t\t\t\tcolor: #e5e7eb;\n\t\t\t\tmin-height: 100vh;\n\t\t\t}\n\t\t\t.brand-font {\n\t\t\t\tfont-family: \"Sora\", sans-serif;\n\t\t\t}\n\t\t\t.surface {\n\t\t\t\tbackground: linear-gradient(160deg, rgba(8, 18, 42, 0.82), rgba(9, 16, 34, 0.68));\n\t\t\t\tbackdrop-filter: blur(14px);\n\t\t\t\tborder: 1px solid rgba(148, 163, 184, 0.18);\n\t\t\t\tbox-shadow: 0 18px 60px rgba(3, 7, 20, 0.35);\n\t\t\t}\n\t\t\t.soft-muted {\n\t\t\t\tcolor: #94a3b8;\n\t\t\t}\n\t\t\t.page-shell {\n\t\t\t\tmax-width: 1280px;\n\t\t\t\tmargin-inline: auto;\n\t\t\t\tpadding-inline: 1rem;\n\t\t\t}\n\t\t\t@media (min-width: 768px) {\n\t\t\t\t.page-shell {\n\t\t\t\t\tpadding-inline: 2rem;\n\t\t\t\t}\n\t\t\t}\n\t\t\t.section-title {\n\t\t\t\tfont-family: \"Sora\", sans-serif;\n\t\t\t\tfont-weight: 700;\n\t\t\t\tletter-spacing: -0.01em;\n\t\t\t}\n\t\t</style></head>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><link href=\"https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css\" rel=\"stylesheet\" type=\"text/css\"><link rel=\"preconnect\" href=\"https://fonts.googleapis.com\"><link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin=\"anonymous\"><link href=\"https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap\" rel=\"stylesheet\"><link href=\"https://fonts.googleapis.com/icon?family=Material+Icons\" rel=\"stylesheet\"><link href=\"/static/app.css\" rel=\"stylesheet\"><script type=\"module\" src=\"https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-RC.7/bundles/datastar.js\"></script></head>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -71,20 +71,250 @@ func AuthGuard(message string) templ.Component {
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div id=\"auth-guard\" class=\"min-h-screen flex items-center justify-center p-4\"><div class=\"card w-full max-w-md bg-base-100 shadow-2xl border border-base-300/40\"><div class=\"card-body items-center text-center py-10\"><span class=\"loading loading-spinner loading-lg text-info\"></span><p class=\"text-base-content/70\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div id=\"auth-guard\" class=\"auth-guard-wrap\"><div class=\"auth-guard-card\"><span class=\"loading loading-spinner loading-lg text-info\"></span><p class=\"text-base-content/70\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(message)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 68, Col: 45}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 24, Col: 44}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</p></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</p></div></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func SideNavItem(href string, label string, icon string, active bool) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var5 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var5 == nil {
+			templ_7745c5c3_Var5 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		var templ_7745c5c3_Var6 = []any{"app-nav-item", templ.KV("is-active", active)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var6...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<a href=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var7 templ.SafeURL
+		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinURLErrs(href)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 31, Col: 13}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\" class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var8 string
+		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var6).String())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 1, Col: 0}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\"><span class=\"material-icons text-[18px]\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var9 string
+		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(icon)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 34, Col: 49}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</span> <span>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var10 string
+		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(label)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 35, Col: 15}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</span></a>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func AppSidebar(active string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var11 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var11 == nil {
+			templ_7745c5c3_Var11 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<aside class=\"app-sidebar\"><div class=\"app-brand\"><div class=\"app-brand-logo\"><span class=\"material-icons text-white text-[18px]\">task_alt</span></div><div><div class=\"app-brand-title\">Todo-1M</div><div class=\"app-brand-sub\">Datastar + CQRS</div></div></div><nav class=\"app-nav\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = SideNavItem("/app", "Workspace", "dashboard", active == "workspace").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = SideNavItem("/architecture", "Overview", "analytics", active == "overview").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = SideNavItem("/settings", "Group Settings", "settings_suggest", active == "settings").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</nav><div class=\"app-sidebar-footer\"><div class=\"app-sidebar-footer-title\">Architecture</div><div class=\"app-sidebar-footer-text\">NATS JetStream events, CQRS projections, SSE stream and RBAC write guards.</div></div></aside>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func WorkspaceMetric(title string, value string, subtitle string, icon string, tone string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var12 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var12 == nil {
+			templ_7745c5c3_Var12 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		var templ_7745c5c3_Var13 = []any{"stat-card " + tone}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var13...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<div class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var14 string
+		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var13).String())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 1, Col: 0}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\"><div class=\"stat-card-top\"><div class=\"stat-card-title\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var15 string
+		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(title)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 67, Col: 39}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</div><div class=\"stat-card-icon\"><span class=\"material-icons text-[18px]\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var16 string
+		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(icon)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 68, Col: 78}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</span></div></div><div class=\"stat-card-value\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var17 string
+		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(value)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 70, Col: 38}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</div><div class=\"stat-card-sub\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var18 string
+		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(subtitle)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 71, Col: 39}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -108,73 +338,73 @@ func LoginFeatureCard(kicker string, title string, subtitle string, kickerClass 
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var5 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var5 == nil {
-			templ_7745c5c3_Var5 = templ.NopComponent
+		templ_7745c5c3_Var19 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var19 == nil {
+			templ_7745c5c3_Var19 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"card bg-base-100/5 border border-base-100/10\"><div class=\"card-body p-4\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<div class=\"login-feature-card\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var6 = []any{"text-xs uppercase tracking-wider " + kickerClass}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var6...)
+		var templ_7745c5c3_Var20 = []any{"text-[11px] uppercase tracking-widest font-semibold " + kickerClass}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var20...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<div class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var7 string
-		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var6).String())
+		var templ_7745c5c3_Var21 string
+		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var20).String())
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 1, Col: 0}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var8 string
-		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(kicker)
+		var templ_7745c5c3_Var22 string
+		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(kicker)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 77, Col: 76}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 77, Col: 94}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div><div class=\"text-xl font-bold text-white\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var9 string
-		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(title)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 78, Col: 52}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</div><div class=\"text-lg font-bold text-white mt-1\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</div><div class=\"text-xs soft-muted\">")
+		var templ_7745c5c3_Var23 string
+		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(title)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 78, Col: 56}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var10 string
-		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(subtitle)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 79, Col: 45}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</div><div class=\"text-xs text-slate-300/80 mt-1\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</div></div></div>")
+		var templ_7745c5c3_Var24 string
+		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(subtitle)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 79, Col: 56}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -182,7 +412,7 @@ func LoginFeatureCard(kicker string, title string, subtitle string, kickerClass 
 	})
 }
 
-func WorkspaceMetric(title string, value string, subtitle string, valueClass string) templ.Component {
+func PersistAuthEffects() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -198,73 +428,12 @@ func WorkspaceMetric(title string, value string, subtitle string, valueClass str
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var11 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var11 == nil {
-			templ_7745c5c3_Var11 = templ.NopComponent
+		templ_7745c5c3_Var25 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var25 == nil {
+			templ_7745c5c3_Var25 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div class=\"card bg-base-100/90 border border-base-300/40 shadow\"><div class=\"card-body p-4\"><p class=\"text-xs uppercase tracking-widest text-base-content/60\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var12 string
-		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(title)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 87, Col: 76}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</p>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var13 = []any{"text-lg font-bold " + valueClass}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var13...)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<p class=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var14 string
-		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var13).String())
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 1, Col: 0}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var15 string
-		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(value)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 88, Col: 57}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</p><p class=\"text-xs text-base-content/60\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var16 string
-		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(subtitle)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 89, Col: 53}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</p></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<div data-effect=\"$access_token && localStorage.setItem('todo_access_token', $access_token)\"></div><div data-effect=\"$refresh_token && localStorage.setItem('todo_refresh_token', $refresh_token)\"></div><div data-effect=\"$username && localStorage.setItem('todo_username', $username)\"></div><div data-effect=\"$user_id && localStorage.setItem('todo_user_id', $user_id)\"></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -272,7 +441,7 @@ func WorkspaceMetric(title string, value string, subtitle string, valueClass str
 	})
 }
 
-func AppToolbar() templ.Component {
+func LogoutButton(buttonID string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -288,12 +457,25 @@ func AppToolbar() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var17 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var17 == nil {
-			templ_7745c5c3_Var17 = templ.NopComponent
+		templ_7745c5c3_Var26 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var26 == nil {
+			templ_7745c5c3_Var26 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<header class=\"sticky top-0 z-20\"><div class=\"bg-base-100/80 border-b border-base-300/40 shadow backdrop-blur\"><div class=\"page-shell py-3\"><div class=\"navbar min-h-0 px-0\"><div class=\"navbar-start gap-3 min-w-0\"><div class=\"w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center border border-primary/30\"><span class=\"material-icons text-xl\">done_all</span></div><div class=\"min-w-0\"><div class=\"brand-font text-lg md:text-xl font-extrabold text-base-content truncate\">Todo-1M</div><div class=\"text-[11px] tracking-wide uppercase text-base-content/60\">CQRS Workspace</div></div><div class=\"hidden lg:flex items-center gap-2 ml-4\"><a href=\"/app\" class=\"btn btn-sm btn-primary\">Workspace</a> <a href=\"/architecture\" class=\"btn btn-sm btn-ghost\">Architecture</a> <span class=\"badge badge-info badge-outline\">Datastar Live</span></div></div><div class=\"navbar-end flex-wrap gap-2\"><a href=\"/architecture\" class=\"btn btn-sm btn-ghost lg:hidden\">Architecture</a><div id=\"toolbar-user\" class=\"badge badge-neutral badge-lg\"></div><button id=\"refresh-btn\" class=\"btn btn-sm btn-outline btn-info\">Refresh Token</button> <button id=\"logout-btn\" class=\"btn btn-sm btn-error\">Logout</button></div></div></div></div></header>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<button id=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var27 string
+		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(buttonID)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 92, Col: 15}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\" class=\"btn btn-sm btn-error\" data-on:click=\"@post($api_base + '/api/v1/auth/logout', {payload: {refresh_token: $refresh_token}, filterSignals: {include: /^$/}}); @setAll('', {include: /^(access_token|refresh_token|username|user_id|active_group_id)$/}); localStorage.removeItem('todo_access_token'); localStorage.removeItem('todo_refresh_token'); localStorage.removeItem('todo_username'); localStorage.removeItem('todo_user_id'); localStorage.removeItem('todo_active_group'); window.location.assign('/login')\">Logout</button>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -317,12 +499,12 @@ func LoginPage() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var18 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var18 == nil {
-			templ_7745c5c3_Var18 = templ.NopComponent
+		templ_7745c5c3_Var28 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var28 == nil {
+			templ_7745c5c3_Var28 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<!doctype html><html lang=\"en\" data-theme=\"night\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<!doctype html><html lang=\"en\" data-theme=\"night\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -330,23 +512,31 @@ func LoginPage() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<body class=\"min-h-screen\"><main class=\"page-shell py-12 md:py-16\"><div class=\"grid lg:grid-cols-12 gap-6 xl:gap-8 items-stretch\"><section class=\"lg:col-span-7 surface rounded-3xl p-8 md:p-10 lg:p-12\"><div class=\"inline-flex items-center gap-3 px-3 py-2 rounded-full bg-base-100/5 border border-base-100/10\"><span class=\"brand-font text-xl md:text-2xl font-extrabold text-white\">Todo-1M</span> <span class=\"badge badge-info\">Local-First Scale Sandbox</span></div><h1 class=\"brand-font text-4xl md:text-5xl lg:text-6xl font-black mt-6 text-white leading-[1.08] max-w-3xl\">Collaborative todo platform with event-driven architecture.</h1><p class=\"soft-muted mt-4 max-w-2xl text-base md:text-lg\">Login to manage groups with RBAC, command/query separation, and Datastar-powered realtime updates backed by NATS JetStream.</p><div class=\"grid grid-cols-1 sm:grid-cols-3 gap-3 mt-8\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<body class=\"min-h-screen\" data-signals=\"{api_base: window.location.origin.replace(':8081', ':8080').replace(':18081', ':18080'), login_username: '', login_password: '', access_token: localStorage.getItem('todo_access_token') || '', refresh_token: localStorage.getItem('todo_refresh_token') || '', username: localStorage.getItem('todo_username') || '', user_id: localStorage.getItem('todo_user_id') || ''}\"><div data-effect=\"$access_token && window.location.assign('/app')\"></div><main class=\"login-shell\"><section class=\"login-hero\"><img src=\"https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=1800&q=80\" alt=\"Modern workspace\" class=\"login-hero-image\"><div class=\"login-hero-overlay\"></div><div class=\"login-hero-content\"><div class=\"inline-flex items-center gap-3 rounded-xl bg-slate-900/40 px-3 py-2 border border-white/10\"><div class=\"app-brand-logo\"><span class=\"material-icons text-white text-[18px]\">task_alt</span></div><div class=\"text-white font-bold brand-font tracking-tight\">Todo-1M Workspace</div></div><h1 class=\"login-hero-title\">Collaborative teams, real-time updates, clean event-driven architecture.</h1><p class=\"login-hero-sub\">Local-first microservices with command/query separation, RBAC, and Datastar-enhanced UX.</p><div class=\"grid sm:grid-cols-3 gap-3 mt-6\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = LoginFeatureCard("Command", "CQRS Write", "Validated commands + auth", "text-info").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = LoginFeatureCard("Command", "CQRS Write", "Auth + validation", "text-cyan-300").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = LoginFeatureCard("Event Bus", "NATS JS", "Durable ordered event stream", "text-primary").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = LoginFeatureCard("Bus", "NATS JetStream", "Durable ordered events", "text-blue-300").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = LoginFeatureCard("Read", "SSE + Datastar", "Projection-aligned UI updates", "text-accent").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = LoginFeatureCard("Read", "SSE + Datastar", "Projection-safe rendering", "text-emerald-300").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</div></section><section class=\"lg:col-span-5 card bg-base-100/95 shadow-2xl border border-base-300/40\"><div class=\"card-body p-6 md:p-8 gap-4\"><div class=\"space-y-1\"><h2 class=\"card-title brand-font text-2xl text-base-content\">Welcome Back</h2><p class=\"text-sm text-base-content/70\">Authenticate to open your workspace.</p></div><div class=\"space-y-3\"><label class=\"form-control w-full\"><div class=\"label pb-1\"><span class=\"label-text font-semibold\">Username</span></div><input id=\"login-username\" class=\"input input-bordered w-full\" type=\"text\" placeholder=\"e.g. team-lead\"></label> <label class=\"form-control w-full\"><div class=\"label pb-1\"><span class=\"label-text font-semibold\">Password</span></div><input id=\"login-password\" class=\"input input-bordered w-full\" type=\"password\" placeholder=\"Minimum 8 characters\"></label></div><div class=\"grid grid-cols-2 gap-3\"><button id=\"login-btn\" class=\"btn btn-primary\">Login</button> <button id=\"register-btn\" class=\"btn btn-outline btn-secondary\">Register</button></div><div class=\"divider my-0\"></div><p id=\"login-status\" class=\"text-sm min-h-6\"></p></div></section></div></main><script defer src=\"/static/login.js\"></script></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</div></div></section><section class=\"login-form-side\"><div class=\"login-form-card\"><div><h2 class=\"brand-font text-3xl font-extrabold text-base-content\">Welcome back</h2><p class=\"text-sm text-base-content/60 mt-1\">Sign in to continue to your team workspace.</p></div><div class=\"space-y-4 mt-4\"><label class=\"form-control w-full\"><div class=\"label pb-1\"><span class=\"label-text text-xs uppercase tracking-wider\">Username</span></div><input id=\"login-username\" class=\"input input-bordered w-full\" type=\"text\" placeholder=\"e.g. team-lead\" data-bind:login_username data-on:keydown=\"event.key === 'Enter' && @post($api_base + '/api/v1/auth/login', {payload: {username: $login_username, password: $login_password}, filterSignals: {include: /^$/}})\"></label> <label class=\"form-control w-full\"><div class=\"label pb-1\"><span class=\"label-text text-xs uppercase tracking-wider\">Password</span></div><input id=\"login-password\" class=\"input input-bordered w-full\" type=\"password\" placeholder=\"Minimum 8 characters\" data-bind:login_password data-on:keydown=\"event.key === 'Enter' && @post($api_base + '/api/v1/auth/login', {payload: {username: $login_username, password: $login_password}, filterSignals: {include: /^$/}})\"></label></div><div class=\"grid grid-cols-2 gap-3 mt-4\"><button id=\"login-btn\" class=\"btn btn-primary\" data-indicator:auth_busy data-attr:disabled=\"$auth_busy\" data-on:click=\"@post($api_base + '/api/v1/auth/login', {payload: {username: $login_username, password: $login_password}, filterSignals: {include: /^$/}})\">Login</button> <button id=\"register-btn\" class=\"btn btn-outline btn-secondary\" data-indicator:auth_busy data-attr:disabled=\"$auth_busy\" data-on:click=\"@post($api_base + '/api/v1/auth/register', {payload: {username: $login_username, password: $login_password}, filterSignals: {include: /^$/}})\">Register</button></div><p id=\"login-status\" class=\"text-sm min-h-6 mt-2\" data-text=\"$error || ''\"></p></div></section></main>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = PersistAuthEffects().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -370,12 +560,12 @@ func WorkspacePage() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var19 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var19 == nil {
-			templ_7745c5c3_Var19 = templ.NopComponent
+		templ_7745c5c3_Var29 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var29 == nil {
+			templ_7745c5c3_Var29 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<!doctype html><html lang=\"en\" data-theme=\"night\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<!doctype html><html lang=\"en\" data-theme=\"night\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -383,7 +573,7 @@ func WorkspacePage() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<body class=\"min-h-screen\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<body class=\"min-h-screen\" data-signals=\"{api_base: window.location.origin.replace(':8081', ':8080').replace(':18081', ':18080'), access_token: localStorage.getItem('todo_access_token') || '', refresh_token: localStorage.getItem('todo_refresh_token') || '', username: localStorage.getItem('todo_username') || '', user_id: localStorage.getItem('todo_user_id') || '', active_group_id: localStorage.getItem('todo_active_group') || '', active_group_role: '', show_feed: localStorage.getItem('todo_show_feed') == null ? true : localStorage.getItem('todo_show_feed') === '1', workspace_bootstrapped: false, group_name: '', member_username: '', member_role: 'member', role_username: '', role_value: 'member', todo_message: ''}\"><div data-show=\"!$access_token\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -391,31 +581,47 @@ func WorkspacePage() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<div id=\"app-shell\" style=\"display:none;\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "</div><div data-effect=\"!$access_token && window.location.assign('/login')\"></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = AppToolbar().Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = PersistAuthEffects().Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<main class=\"page-shell py-6 md:py-8\"><div class=\"surface rounded-3xl p-4 md:p-6 lg:p-8 space-y-6 md:space-y-7\"><section class=\"flex flex-col md:flex-row md:items-end justify-between gap-4\"><div><h1 class=\"section-title text-2xl md:text-3xl text-white\">Group Workspace</h1><p class=\"text-sm md:text-base soft-muted mt-1\">Structured, role-aware collaboration dashboard with projection-safe realtime updates.</p></div><label class=\"label cursor-pointer gap-3 p-0\"><span class=\"label-text text-sm text-base-content/80\">Show Realtime Feed</span> <input id=\"feed-visible-toggle\" type=\"checkbox\" class=\"toggle toggle-info\" checked></label></section><section class=\"grid grid-cols-1 md:grid-cols-3 gap-4\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<div data-effect=\"localStorage.setItem('todo_show_feed', $show_feed ? '1' : '0')\"></div><div data-effect=\"$active_group_id ? localStorage.setItem('todo_active_group', $active_group_id) : localStorage.removeItem('todo_active_group')\"></div><div data-effect=\"$access_token && !$workspace_bootstrapped && (@get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}}), @setAll(true, {include: /^workspace_bootstrapped$/}))\"></div><div id=\"app-shell\" class=\"app-root\" data-show=\"$access_token\"><div class=\"app-layout\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = WorkspaceMetric("Session", "Authenticated", "Protected via JWT + refresh flow", "text-success").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = AppSidebar("workspace").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = WorkspaceMetric("Consistency", "Projection Synced", "Read model offset gating", "text-info").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<div class=\"app-main\"><header class=\"app-topbar\"><div><div class=\"app-topbar-title brand-font\">Group Workspace</div><div class=\"app-topbar-sub\">Realtime collaboration with projection-safe updates.</div></div><div class=\"app-topbar-actions\"><div id=\"toolbar-user\" class=\"badge badge-neutral badge-lg\" data-text=\"$username || 'user'\"></div><button id=\"refresh-btn\" class=\"btn btn-sm btn-outline btn-info\" data-indicator:refresh_busy data-attr:disabled=\"$refresh_busy\" data-on:click=\"@post($api_base + '/api/v1/auth/refresh', {payload: {refresh_token: $refresh_token}, filterSignals: {include: /^$/}})\">Refresh Token</button>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = WorkspaceMetric("Transport", "SSE + Datastar", "Realtime event patches", "text-primary").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = LogoutButton("logout-btn").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</section><section class=\"grid grid-cols-1 2xl:grid-cols-12 gap-5 md:gap-6 items-start\"><aside class=\"2xl:col-span-4 space-y-5\"><div class=\"card bg-base-100/95 shadow-xl border border-base-300/40\"><div class=\"card-body p-5 gap-4\"><div><h2 class=\"card-title section-title text-base-content\">Groups</h2><p class=\"text-xs text-base-content/60\">Create and switch active collaboration spaces.</p></div><label class=\"form-control\"><div class=\"label pb-1\"><span class=\"label-text text-xs uppercase tracking-widest\">Create Group</span></div><div class=\"join w-full\"><input id=\"group-name\" class=\"input input-bordered join-item w-full\" type=\"text\" placeholder=\"New group name\"> <button id=\"create-group-btn\" class=\"btn btn-primary join-item\">Create</button></div></label> <label class=\"form-control\"><div class=\"label pb-1\"><span class=\"label-text text-xs uppercase tracking-widest\">Connect to Group</span></div><div class=\"join w-full\"><input id=\"active-group\" class=\"input input-bordered join-item w-full\" type=\"text\" placeholder=\"Active group id\"> <button id=\"connect-group-btn\" class=\"btn btn-secondary join-item\">Connect</button></div></label><ul id=\"groups-list\" class=\"menu bg-base-200 rounded-box border border-base-300/50 p-2 max-h-72 overflow-auto\"></ul></div></div><div class=\"card bg-base-100/95 shadow-xl border border-base-300/40\"><div class=\"card-body p-5 gap-4\"><div><h2 class=\"card-title section-title text-base-content\">Members & Roles</h2><p class=\"text-xs text-base-content/60\">Role-based access controls in the active group.</p></div><div class=\"join w-full\"><input id=\"member-username\" class=\"input input-bordered join-item w-full\" type=\"text\" placeholder=\"Username\"> <select id=\"member-role\" class=\"select select-bordered join-item\"><option value=\"member\">member</option> <option value=\"admin\">admin</option></select> <button id=\"add-member-btn\" class=\"btn join-item\">Add</button></div><div class=\"join w-full\"><input id=\"role-username\" class=\"input input-bordered join-item w-full\" type=\"text\" placeholder=\"Username to update role\"> <select id=\"role-value\" class=\"select select-bordered join-item\"><option value=\"member\">member</option> <option value=\"admin\">admin</option></select> <button id=\"update-role-btn\" class=\"btn join-item\">Update</button></div></div></div></aside><section class=\"2xl:col-span-8 space-y-5 md:space-y-6\"><div class=\"card bg-base-100/95 shadow-xl border border-base-300/40\"><div class=\"card-body p-5 gap-4\"><div class=\"flex justify-between items-start gap-2\"><div><h2 class=\"card-title section-title text-base-content\">Todo Board</h2><p class=\"text-xs text-base-content/60\">Shared list scoped to the active group.</p></div><span class=\"badge badge-outline badge-info\">Projection-backed</span></div><div class=\"join w-full\"><input id=\"todo-input\" class=\"input input-bordered join-item w-full\" type=\"text\" placeholder=\"Write a todo message...\"> <button id=\"send-btn\" class=\"btn btn-primary join-item\">Add</button></div><div id=\"todos\" class=\"space-y-3\"></div></div></div><div id=\"feed-card\" class=\"card bg-base-100/95 shadow-xl border border-base-300/40\"><div class=\"card-body p-5 gap-4\"><div class=\"flex justify-between items-start gap-2\"><div><h2 class=\"card-title section-title text-base-content\">Realtime Feed</h2><p class=\"text-xs text-base-content/60\">SSE stream with Datastar event patches.</p></div><span class=\"badge badge-info badge-outline\">Live</span></div><div id=\"events\" class=\"space-y-3 max-h-[28rem] overflow-auto pr-1\"><span class=\"loading loading-spinner loading-lg text-info\"></span></div></div></div></section></section></div></main></div><script type=\"module\" src=\"https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-RC.7/bundles/datastar.js\"></script><script defer src=\"/static/workspace.js\"></script></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</div></header><main class=\"app-content\"><div class=\"status-card\"><div class=\"flex items-center justify-between gap-3 flex-wrap\"><p id=\"auth-status\" class=\"text-sm font-semibold text-info\" data-text=\"'Logged in as ' + ($username || 'user')\"></p><label class=\"label cursor-pointer gap-3 p-0\"><span class=\"label-text text-sm text-base-content/80\">Show Realtime Feed</span> <input id=\"feed-visible-toggle\" type=\"checkbox\" class=\"toggle toggle-info\" data-bind:show_feed></label></div></div><section class=\"stats-grid\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = WorkspaceMetric("Session", "Authenticated", "JWT + refresh flow", "verified_user", "tone-success").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = WorkspaceMetric("Consistency", "Projection Synced", "SSE patch-first workflow", "sync", "tone-info").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = WorkspaceMetric("Transport", "SSE + Datastar", "Live event patch stream", "rss_feed", "tone-primary").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</section><section class=\"workspace-grid\"><aside class=\"workspace-side space-y-5\"><div class=\"panel-card\"><div class=\"panel-header\"><h2 class=\"panel-title\">Groups</h2><p class=\"panel-sub\">Create and switch active collaboration groups.</p></div><label class=\"form-control\"><div class=\"label pb-1\"><span class=\"label-text text-xs uppercase tracking-widest\">Create Group</span></div><div class=\"join w-full\"><input id=\"group-name\" class=\"input input-bordered join-item w-full\" type=\"text\" placeholder=\"New group name\" data-bind:group_name data-on:keydown=\"event.key === 'Enter' && @post($api_base + '/api/v1/groups', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {name: $group_name}, filterSignals: {include: /^$/}})\"> <button id=\"create-group-btn\" class=\"btn btn-primary join-item\" data-indicator:create_group_busy data-attr:disabled=\"$create_group_busy\" data-on:click=\"@post($api_base + '/api/v1/groups', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {name: $group_name}, filterSignals: {include: /^$/}}); @setAll($id, {include: /^active_group_id$/}); @setAll('', {include: /^group_name$/}); @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}}); @get('/events?group_id=' + $active_group_id + '&token=' + $access_token, {openWhenHidden: true, filterSignals: {include: /^$/}})\">Create</button></div></label> <label class=\"form-control\"><div class=\"label pb-1\"><span class=\"label-text text-xs uppercase tracking-widest\">Connect Group</span></div><div class=\"join w-full\"><input id=\"active-group\" class=\"input input-bordered join-item w-full\" type=\"text\" placeholder=\"Active group id\" data-bind:active_group_id data-on:keydown=\"event.key === 'Enter' && @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})\"> <button id=\"connect-group-btn\" class=\"btn btn-secondary join-item\" data-indicator:connect_group_busy data-attr:disabled=\"$connect_group_busy\" data-on:click=\"$active_group_id && @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}}); $active_group_id && @get('/events?group_id=' + $active_group_id + '&token=' + $access_token, {openWhenHidden: true, filterSignals: {include: /^$/}})\">Connect</button></div></label><ul id=\"groups-list\" class=\"menu bg-base-200/60 rounded-box border border-base-300/40 p-2 max-h-64 overflow-auto\"><li class=\"text-sm text-base-content/60 px-3 py-2\">Loading groups...</li></ul></div><div class=\"panel-card\"><div class=\"panel-header\"><h2 class=\"panel-title\">Members & Roles</h2><p class=\"panel-sub\">Role-based management in active group.</p></div><div class=\"members-role-row\"><input id=\"member-username\" class=\"input input-bordered min-w-0\" type=\"text\" placeholder=\"Username\" data-bind:member_username data-on:keydown=\"event.key === 'Enter' && $active_group_id && @post($api_base + '/api/v1/groups/' + $active_group_id + '/members', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {username: $member_username, role: $member_role}, filterSignals: {include: /^$/}})\"> <select id=\"member-role\" class=\"select select-bordered members-role-select\" data-bind:member_role><option value=\"member\">member</option> <option value=\"admin\">admin</option></select> <button id=\"add-member-btn\" class=\"btn members-role-btn\" data-indicator:add_member_busy data-attr:disabled=\"$add_member_busy\" data-on:click=\"$active_group_id && @post($api_base + '/api/v1/groups/' + $active_group_id + '/members', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {username: $member_username, role: $member_role}, filterSignals: {include: /^$/}}); @setAll('', {include: /^member_username$/}); $active_group_id && @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})\">Add</button></div><div class=\"members-role-row mt-3\"><input id=\"role-username\" class=\"input input-bordered min-w-0\" type=\"text\" placeholder=\"Username to update role\" data-bind:role_username data-on:keydown=\"event.key === 'Enter' && $active_group_id && @patch($api_base + '/api/v1/groups/' + $active_group_id + '/members/role', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {username: $role_username, role: $role_value}, filterSignals: {include: /^$/}})\"> <select id=\"role-value\" class=\"select select-bordered members-role-select\" data-bind:role_value><option value=\"member\">member</option> <option value=\"admin\">admin</option></select> <button id=\"update-role-btn\" class=\"btn members-role-btn\" data-indicator:update_role_busy data-attr:disabled=\"$update_role_busy\" data-on:click=\"$active_group_id && @patch($api_base + '/api/v1/groups/' + $active_group_id + '/members/role', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {username: $role_username, role: $role_value}, filterSignals: {include: /^$/}}); @setAll('', {include: /^role_username$/}); $active_group_id && @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})\">Update</button></div></div></aside><section class=\"workspace-main space-y-5\"><div class=\"panel-card\"><div class=\"panel-header\"><h2 class=\"panel-title\">Todo Board</h2><p class=\"panel-sub\">Live group todo stream with author attribution and RBAC edits.</p></div><div class=\"join w-full mb-3\"><input id=\"todo-input\" class=\"input input-bordered join-item w-full\" type=\"text\" placeholder=\"Write a todo message...\" data-bind:todo_message data-on:keydown=\"event.key === 'Enter' && $active_group_id && @post($api_base + '/api/v1/command', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {action: 'create-todo', title: $todo_message, group_id: $active_group_id, todo_id: ''}, filterSignals: {include: /^$/}})\"> <button id=\"send-btn\" class=\"btn btn-primary join-item\" data-indicator:create_todo_busy data-attr:disabled=\"$create_todo_busy\" data-on:click=\"$active_group_id && @post($api_base + '/api/v1/command', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {action: 'create-todo', title: $todo_message, group_id: $active_group_id, todo_id: ''}, filterSignals: {include: /^$/}}); @setAll('', {include: /^todo_message$/})\">Add</button></div><div id=\"todos\" class=\"space-y-3\"><div class=\"text-sm text-base-content/60 px-2 py-3\">Select or connect a group to view todos.</div></div></div><div id=\"feed-card\" class=\"panel-card\" data-show=\"$show_feed\"><div class=\"panel-header\"><h2 class=\"panel-title\">Realtime Feed</h2><p class=\"panel-sub\">SSE stream rendered with Datastar patches.</p></div><div id=\"events\" class=\"space-y-3 max-h-[24rem] overflow-auto pr-1\"><span class=\"loading loading-spinner loading-lg text-info\"></span></div></div></section></section></main></div></div></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -423,7 +629,7 @@ func WorkspacePage() templ.Component {
 	})
 }
 
-func ArchitectureServiceCard(index string, title string, subtitle string) templ.Component {
+func ArchitectureServiceCard(title string, subtitle string, icon string, tone string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -439,51 +645,69 @@ func ArchitectureServiceCard(index string, title string, subtitle string) templ.
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var20 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var20 == nil {
-			templ_7745c5c3_Var20 = templ.NopComponent
+		templ_7745c5c3_Var30 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var30 == nil {
+			templ_7745c5c3_Var30 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<div class=\"card bg-base-100/95 shadow-xl border border-base-300/40\"><div class=\"card-body\"><div class=\"badge badge-primary badge-outline w-fit\">")
+		var templ_7745c5c3_Var31 = []any{"overview-card " + tone}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var31...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var21 string
-		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(index)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 308, Col: 63}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<div class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</div><h2 class=\"card-title section-title\">")
+		var templ_7745c5c3_Var32 string
+		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var31).String())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 1, Col: 0}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var22 string
-		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(title)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 309, Col: 47}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "\"><div class=\"overview-card-head\"><div class=\"overview-icon\"><span class=\"material-icons text-[18px]\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</h2><p>")
+		var templ_7745c5c3_Var33 string
+		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(icon)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 299, Col: 77}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var23 string
-		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(subtitle)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 310, Col: 16}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "</span></div><h3 class=\"overview-title\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</p></div></div>")
+		var templ_7745c5c3_Var34 string
+		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(title)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 300, Col: 37}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "</h3></div><p class=\"overview-sub\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var35 string
+		templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(subtitle)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 302, Col: 36}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "</p></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -507,20 +731,20 @@ func ArchitecturePage() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var24 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var24 == nil {
-			templ_7745c5c3_Var24 = templ.NopComponent
+		templ_7745c5c3_Var36 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var36 == nil {
+			templ_7745c5c3_Var36 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<!doctype html><html lang=\"en\" data-theme=\"night\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "<!doctype html><html lang=\"en\" data-theme=\"night\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = AppHead("Todo-1M · Architecture").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = AppHead("Todo-1M · Overview").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<body class=\"min-h-screen\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "<body class=\"min-h-screen\" data-signals=\"{api_base: window.location.origin.replace(':8081', ':8080').replace(':18081', ':18080'), access_token: localStorage.getItem('todo_access_token') || '', refresh_token: localStorage.getItem('todo_refresh_token') || '', username: localStorage.getItem('todo_username') || '', user_id: localStorage.getItem('todo_user_id') || ''}\"><div data-show=\"!$access_token\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -528,35 +752,136 @@ func ArchitecturePage() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<div id=\"architecture-shell\" style=\"display:none;\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "</div><div data-effect=\"!$access_token && window.location.assign('/login')\"></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = AppToolbar().Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = PersistAuthEffects().Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<main class=\"page-shell py-6 md:py-8 space-y-6\"><section class=\"card surface rounded-2xl border border-base-100/10\"><div class=\"card-body p-6\"><h1 class=\"section-title text-2xl md:text-3xl text-white\">System Architecture</h1><p class=\"soft-muted max-w-3xl\">Event-driven CQRS pipeline optimized for local development, with clear separation between command handling, domain processing, durable events, and projection-backed read APIs.</p></div></section><section class=\"grid md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-5\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "<div id=\"architecture-shell\" class=\"app-root\" data-show=\"$access_token\"><div class=\"app-layout\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = ArchitectureServiceCard("1", "Command API", "Auth, RBAC validation, and command ingress.").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = AppSidebar("overview").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = ArchitectureServiceCard("2", "Domain Engine", "Applies business rules and emits domain events.").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "<div class=\"app-main\"><header class=\"app-topbar\"><div><div class=\"app-topbar-title brand-font\">Group Overview</div><div class=\"app-topbar-sub\">Dashboard snapshot of your collaboration system.</div></div><div class=\"app-topbar-actions\"><div id=\"toolbar-user\" class=\"badge badge-neutral badge-lg\" data-text=\"$username || 'user'\"></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = ArchitectureServiceCard("3", "Data Sink", "Persists event log and updates read projections.").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = LogoutButton("logout-btn").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = ArchitectureServiceCard("4", "SSE Streamer", "Serves query APIs and realtime stream for UI.").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "</div></header><main class=\"app-content space-y-5\"><section class=\"stats-grid\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</section><section class=\"card bg-base-100/95 shadow-xl border border-base-300/40\"><div class=\"card-body p-6\"><h2 class=\"card-title section-title\">Message Flow</h2><ul class=\"steps steps-vertical lg:steps-horizontal w-full mt-2\"><li class=\"step step-primary\">User command accepted</li><li class=\"step step-primary\">Event published to JetStream</li><li class=\"step step-primary\">Projection offset advanced</li><li class=\"step step-primary\">UI sync when offset catches event seq</li></ul></div></section></main></div><script defer src=\"/static/architecture.js\"></script></body></html>")
+		templ_7745c5c3_Err = WorkspaceMetric("Groups", "Live", "Group-scoped read and write paths", "groups", "tone-primary").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = WorkspaceMetric("Users", "RBAC", "owner/admin/member enforcement", "admin_panel_settings", "tone-info").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = WorkspaceMetric("Events", "JetStream", "Durable event history and replay", "hive", "tone-success").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "</section><section class=\"overview-grid\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = ArchitectureServiceCard("Command API", "Validates JWT, enforces group role permissions, receives command intents.", "input", "tone-primary").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = ArchitectureServiceCard("Domain Engine", "Applies business rules and transforms commands into domain events.", "hub", "tone-info").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = ArchitectureServiceCard("Data Sink", "Persists events and updates read projections by group.", "database", "tone-success").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = ArchitectureServiceCard("SSE Streamer", "Serves query endpoints and pushes Datastar live patches.", "stream", "tone-warning").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "</section><section class=\"panel-card\"><div class=\"panel-header\"><h2 class=\"panel-title\">Message Flow</h2><p class=\"panel-sub\">Every mutation follows one durable path from command to consistent read model.</p></div><ul class=\"steps steps-vertical lg:steps-horizontal w-full\"><li class=\"step step-primary\">Client sends command</li><li class=\"step step-primary\">API validates auth + RBAC</li><li class=\"step step-primary\">Event stored in JetStream</li><li class=\"step step-primary\">Projection catches up</li><li class=\"step step-primary\">SSE refreshes UI safely</li></ul></section></main></div></div></div></body></html>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func SettingsPage() templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var37 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var37 == nil {
+			templ_7745c5c3_Var37 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "<!doctype html><html lang=\"en\" data-theme=\"night\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = AppHead("Todo-1M · Group Settings").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "<body class=\"min-h-screen\" data-signals=\"{api_base: window.location.origin.replace(':8081', ':8080').replace(':18081', ':18080'), access_token: localStorage.getItem('todo_access_token') || '', refresh_token: localStorage.getItem('todo_refresh_token') || '', username: localStorage.getItem('todo_username') || '', user_id: localStorage.getItem('todo_user_id') || ''}\"><div data-show=\"!$access_token\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = AuthGuard("Checking session...").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "</div><div data-effect=\"!$access_token && window.location.assign('/login')\"></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = PersistAuthEffects().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "<div id=\"settings-shell\" class=\"app-root\" data-show=\"$access_token\"><div class=\"app-layout\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = AppSidebar("settings").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<div class=\"app-main\"><header class=\"app-topbar\"><div><div class=\"app-topbar-title brand-font\">Group Settings & RBAC</div><div class=\"app-topbar-sub\">Permission model and operational controls for your active workspace.</div></div><div class=\"app-topbar-actions\"><div id=\"toolbar-user\" class=\"badge badge-neutral badge-lg\" data-text=\"$username || 'user'\"></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = LogoutButton("logout-btn").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "</div></header><main class=\"app-content space-y-5\"><section class=\"panel-card\"><div class=\"panel-header\"><h2 class=\"panel-title\">Role Definitions</h2><p class=\"panel-sub\">Current production permission model used by command handlers.</p></div><div class=\"grid md:grid-cols-3 gap-3\"><div class=\"role-def role-owner\"><div class=\"font-bold\">Owner</div><p>Full workspace control including member role management.</p></div><div class=\"role-def role-admin\"><div class=\"font-bold\">Admin</div><p>Can add/edit/delete todos and manage members.</p></div><div class=\"role-def role-member\"><div class=\"font-bold\">Member</div><p>Can read and create todos, edit own items only.</p></div></div></section><section class=\"panel-card\"><div class=\"panel-header\"><h2 class=\"panel-title\">Operational Notes</h2><p class=\"panel-sub\">Local deployment behavior and runtime expectations.</p></div><ul class=\"list-disc pl-5 text-sm text-base-content/70 space-y-2\"><li>Group data isolation is enforced in both query endpoints and command actions.</li><li>UI updates are eventual-consistent and projection-gated by event sequence offset.</li><li>Token refresh and logout are handled in browser state with secure API endpoints.</li><li>Use the Workspace page for all live member and todo management actions.</li></ul></section></main></div></div></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -580,38 +905,38 @@ func EventItem(msg string, subtitle string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var25 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var25 == nil {
-			templ_7745c5c3_Var25 = templ.NopComponent
+		templ_7745c5c3_Var38 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var38 == nil {
+			templ_7745c5c3_Var38 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<div class=\"chat chat-start\"><div class=\"chat-bubble bg-info text-info-content shadow-md border border-info/50\"><p class=\"font-semibold leading-tight\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "<div class=\"chat chat-start\"><div class=\"chat-bubble bg-info text-info-content shadow border border-info/30\"><p class=\"font-semibold leading-tight\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var26 string
-		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
+		var templ_7745c5c3_Var39 string
+		templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 358, Col: 47}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 446, Col: 47}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</p><p class=\"text-xs opacity-80 mt-1\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var27 string
-		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(subtitle)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 359, Col: 48}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "</p><p class=\"text-xs opacity-80 mt-1\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</p></div></div>")
+		var templ_7745c5c3_Var40 string
+		templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(subtitle)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 447, Col: 48}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "</p></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

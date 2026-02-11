@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"html"
 	"log"
 	"net/http"
 	"strconv"
@@ -59,6 +60,7 @@ func main() {
 	mux.Handle("/login", templ.Handler(frontend.LoginPage()))
 	mux.Handle("/app", templ.Handler(frontend.WorkspacePage()))
 	mux.Handle("/architecture", templ.Handler(frontend.ArchitecturePage()))
+	mux.Handle("/settings", templ.Handler(frontend.SettingsPage()))
 	mux.Handle("/static/", http.StripPrefix("/static/", frontend.StaticHandler()))
 
 	mux.HandleFunc("/api/v1/groups", func(w http.ResponseWriter, r *http.Request) {
@@ -154,6 +156,49 @@ func main() {
 		})
 	})
 
+	mux.HandleFunc("/ui/workspace", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		claims, ok := claimsFromAuthHeader(w, r, tokenManager)
+		if !ok {
+			return
+		}
+
+		groups, err := identityRepo.ListGroupsForUser(r.Context(), claims.Subject)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		activeGroupID := strings.TrimSpace(r.URL.Query().Get("group_id"))
+		activeRole := ""
+		for _, group := range groups {
+			if group.GroupID == activeGroupID {
+				activeRole = group.Role
+				break
+			}
+		}
+		if activeRole == "" {
+			activeGroupID = ""
+		}
+
+		todos := make([]query.TodoView, 0)
+		if activeGroupID != "" {
+			todos, err = queryRepo.ListGroupTodos(r.Context(), activeGroupID, 50)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = w.Write([]byte(renderGroupsList(groups, activeGroupID)))
+		_, _ = w.Write([]byte(renderTodoList(todos, claims.Subject, activeRole, activeGroupID)))
+	})
+
 	mux.HandleFunc("/events", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.Header().Set("Cache-Control", "no-cache")
@@ -191,39 +236,37 @@ func main() {
 			return
 		}
 
+		sendPatch := func(selector, mode, content string) {
+			content = strings.ReplaceAll(content, "\n", "")
+			fmt.Fprint(w, "event: datastar-patch-elements\n")
+			fmt.Fprintf(w, "data: selector %s\n", selector)
+			fmt.Fprintf(w, "data: mode %s\n", mode)
+			fmt.Fprintf(w, "data: elements %s\n\n", content)
+			flusher.Flush()
+		}
+
 		sendFragment := func(msg string, subtitle string) {
 			component := frontend.EventItem(msg, subtitle)
 			var buf bytes.Buffer
 			if err := component.Render(r.Context(), &buf); err != nil {
 				return
 			}
-			content := strings.ReplaceAll(buf.String(), "\n", "")
-			fmt.Fprint(w, "event: datastar-patch-elements\n")
-			fmt.Fprint(w, "data: selector #events\n")
-			fmt.Fprint(w, "data: mode prepend\n")
-			fmt.Fprintf(w, "data: elements %s\n\n", content)
-			flusher.Flush()
+			sendPatch("#events", "prepend", buf.String())
 		}
 
-		type todoEventPayload struct {
-			contracts.TodoEvent
-			EventSeq uint64 `json:"event_seq"`
+		role, err := identityRepo.GetMembershipRole(r.Context(), claims.Subject, groupID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
-
-		sendTodoEvent := func(event contracts.TodoEvent, eventSeq uint64) {
-			payload, err := json.Marshal(todoEventPayload{
-				TodoEvent: event,
-				EventSeq:  eventSeq,
-			})
+		sendTodos := func(targetEventSeq uint64) {
+			waitForProjectionOffset(r.Context(), queryRepo, groupID, targetEventSeq, 2500*time.Millisecond)
+			todos, err := queryRepo.ListGroupTodos(r.Context(), groupID, 50)
 			if err != nil {
 				return
 			}
-			fmt.Fprint(w, "event: todo-event\n")
-			fmt.Fprintf(w, "data: %s\n\n", strings.ReplaceAll(string(payload), "\n", ""))
-			flusher.Flush()
+			sendPatch("#todos", "outer", renderTodoList(todos, claims.Subject, role, groupID))
 		}
-
-		sendFragment("Connected to Group Stream!", "Waiting for updates...")
 
 		type streamEvent struct {
 			Event contracts.TodoEvent
@@ -259,6 +302,9 @@ func main() {
 			defer sub.Unsubscribe()
 		}
 
+		sendFragment("Connected to Group Stream!", "Waiting for updates...")
+		sendTodos(0)
+
 		for {
 			select {
 			case <-r.Context().Done():
@@ -275,7 +321,7 @@ func main() {
 				default:
 					sendFragment("Group updated", "change by "+event.ActorName)
 				}
-				sendTodoEvent(event, streamEvent.Seq)
+				sendTodos(streamEvent.Seq)
 			}
 		}
 	})
@@ -318,4 +364,140 @@ func writeJSON(w http.ResponseWriter, status int, payload any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(payload)
+}
+
+func waitForProjectionOffset(ctx context.Context, repo *query.TodoRepository, groupID string, target uint64, timeout time.Duration) {
+	if target == 0 {
+		return
+	}
+
+	deadline := time.Now().Add(timeout)
+	delay := 40 * time.Millisecond
+	for time.Now().Before(deadline) {
+		offset, err := repo.GetGroupProjectionOffset(ctx, groupID)
+		if err == nil && offset >= target {
+			return
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(delay):
+		}
+
+		nextDelay := time.Duration(float64(delay) * 1.5)
+		if nextDelay > 320*time.Millisecond {
+			nextDelay = 320 * time.Millisecond
+		}
+		delay = nextDelay
+	}
+}
+
+func renderGroupsList(groups []identity.GroupMembership, activeGroupID string) string {
+	var sb strings.Builder
+	sb.WriteString(`<ul id="groups-list" class="menu bg-base-200/60 rounded-box border border-base-300/40 p-2 max-h-64 overflow-auto">`)
+
+	if len(groups) == 0 {
+		sb.WriteString(`<li class="text-sm text-base-content/60 px-3 py-2">No groups yet. Create one to start collaborating.</li></ul>`)
+		return sb.String()
+	}
+
+	for _, group := range groups {
+		name := strings.TrimSpace(group.GroupName)
+		if name == "" {
+			name = group.GroupID
+		}
+
+		buttonClass := "w-full text-left rounded-lg px-3 py-2 hover:bg-base-300/40 transition-colors"
+		if group.GroupID == activeGroupID {
+			buttonClass += " bg-base-300/50"
+		}
+
+		sb.WriteString(`<li><div class="flex items-center gap-2">`)
+		sb.WriteString(`<button class="`)
+		sb.WriteString(html.EscapeString(buttonClass))
+		sb.WriteString(`" data-group-id="`)
+		sb.WriteString(html.EscapeString(group.GroupID))
+		sb.WriteString(`" data-group-role="`)
+		sb.WriteString(html.EscapeString(group.Role))
+		sb.WriteString(`" data-on:click="@setAll(evt.currentTarget.dataset.groupId, {include: /^active_group_id$/}); @setAll(evt.currentTarget.dataset.groupRole, {include: /^active_group_role$/}); @get('/ui/workspace?group_id=' + evt.currentTarget.dataset.groupId, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}}); @get('/events?group_id=' + evt.currentTarget.dataset.groupId + '&token=' + $access_token, {openWhenHidden: true, filterSignals: {include: /^$/}})">`)
+		sb.WriteString(html.EscapeString(name))
+		sb.WriteString(` [`)
+		sb.WriteString(html.EscapeString(group.Role))
+		sb.WriteString(`]</button>`)
+
+		if group.Role == identity.RoleOwner {
+			sb.WriteString(`<button class="btn btn-xs btn-error btn-outline shrink-0" data-group-id="`)
+			sb.WriteString(html.EscapeString(group.GroupID))
+			sb.WriteString(`" data-on:click="evt.stopPropagation(); @setAll((evt.currentTarget.dataset.groupId === $active_group_id) ? '' : $active_group_id, {include: /^active_group_id$/}); @setAll((evt.currentTarget.dataset.groupId === $active_group_id) ? '' : $active_group_role, {include: /^active_group_role$/}); @delete($api_base + '/api/v1/groups/' + evt.currentTarget.dataset.groupId, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}}); @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})">Delete</button>`)
+		}
+		sb.WriteString(`</div></li>`)
+	}
+
+	sb.WriteString(`</ul>`)
+	return sb.String()
+}
+
+func renderTodoList(todos []query.TodoView, actorUserID, role, activeGroupID string) string {
+	var sb strings.Builder
+	sb.WriteString(`<div id="todos" class="space-y-3">`)
+
+	if strings.TrimSpace(activeGroupID) == "" {
+		sb.WriteString(`<div class="text-sm text-base-content/60 px-2 py-3">Select or connect a group to view todos.</div></div>`)
+		return sb.String()
+	}
+
+	if len(todos) == 0 {
+		sb.WriteString(`<div class="text-sm text-base-content/60 px-2 py-3">No todos in this group yet.</div></div>`)
+		return sb.String()
+	}
+
+	canModerate := role == identity.RoleOwner || role == identity.RoleAdmin
+	for _, todo := range todos {
+		meta := "Created by " + strings.TrimSpace(todo.CreatedByUsername)
+		if strings.TrimSpace(todo.UpdatedByUsername) != "" && todo.UpdatedByUsername != todo.CreatedByUsername {
+			meta += " • Updated by " + strings.TrimSpace(todo.UpdatedByUsername)
+		}
+
+		canEdit := canModerate || todo.CreatedByUserID == actorUserID
+		inputID := "todo-edit-" + todo.TodoID
+
+		sb.WriteString(`<div class="card bg-base-100 border border-base-300/60 shadow"><div class="card-body p-4 gap-3">`)
+		sb.WriteString(`<div class="flex justify-between gap-2 items-start">`)
+		sb.WriteString(`<div><div class="font-semibold text-base-content text-base">`)
+		sb.WriteString(html.EscapeString(todo.Title))
+		sb.WriteString(`</div><div class="text-xs text-base-content/70 mt-1">`)
+		sb.WriteString(html.EscapeString(meta))
+		sb.WriteString(`</div></div>`)
+
+		if canEdit {
+			sb.WriteString(`<div class="join">`)
+			sb.WriteString(`<input id="`)
+			sb.WriteString(html.EscapeString(inputID))
+			sb.WriteString(`" class="input input-bordered input-sm join-item w-52" type="text" value="`)
+			sb.WriteString(html.EscapeString(todo.Title))
+			sb.WriteString(`"/>`)
+			sb.WriteString(`<button class="btn btn-xs btn-outline join-item" data-todo-id="`)
+			sb.WriteString(html.EscapeString(todo.TodoID))
+			sb.WriteString(`" data-input-id="`)
+			sb.WriteString(html.EscapeString(inputID))
+			sb.WriteString(`" data-on:click="@post($api_base + '/api/v1/command', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {action: 'update-todo', title: document.getElementById(evt.currentTarget.dataset.inputId).value, group_id: $active_group_id, todo_id: evt.currentTarget.dataset.todoId}, filterSignals: {include: /^$/}}); @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})">Save</button>`)
+			sb.WriteString(`<button class="btn btn-xs btn-error btn-outline join-item" data-todo-id="`)
+			sb.WriteString(html.EscapeString(todo.TodoID))
+			sb.WriteString(`" data-on:click="@post($api_base + '/api/v1/command', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {action: 'delete-todo', title: '', group_id: $active_group_id, todo_id: evt.currentTarget.dataset.todoId}, filterSignals: {include: /^$/}}); @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})">Delete</button>`)
+			sb.WriteString(`</div>`)
+		} else {
+			sb.WriteString(`<span class="badge badge-ghost badge-sm">read-only</span>`)
+		}
+
+		sb.WriteString(`</div><div class="divider my-0"></div><div class="flex items-center justify-between text-[11px] text-base-content/60">`)
+		sb.WriteString(`<span class="badge badge-ghost badge-sm">group `)
+		sb.WriteString(html.EscapeString(todo.GroupID))
+		sb.WriteString(`</span><span>todo `)
+		sb.WriteString(html.EscapeString(todo.TodoID))
+		sb.WriteString(`</span></div></div></div>`)
+	}
+
+	sb.WriteString(`</div>`)
+	return sb.String()
 }

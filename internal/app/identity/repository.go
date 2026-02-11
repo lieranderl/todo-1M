@@ -49,6 +49,7 @@ type Repository interface {
 	FindUserByID(ctx context.Context, userID string) (User, error)
 
 	CreateGroup(ctx context.Context, group Group, creatorUserID string) error
+	DeleteGroup(ctx context.Context, groupID string) error
 	AddUserToGroupWithRole(ctx context.Context, groupID, userID, role string) error
 	AddUserToGroupByUsernameWithRole(ctx context.Context, groupID, username, role string) error
 	SetUserRoleByUsername(ctx context.Context, groupID, username, role string) error
@@ -188,6 +189,17 @@ func (r *PostgresRepository) CreateGroup(ctx context.Context, group Group, creat
 	}
 
 	return tx.Commit(ctx)
+}
+
+func (r *PostgresRepository) DeleteGroup(ctx context.Context, groupID string) error {
+	res, err := r.Pool.Exec(ctx, `DELETE FROM groups WHERE id = $1`, groupID)
+	if err != nil {
+		return err
+	}
+	if res.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
 }
 
 func (r *PostgresRepository) AddUserToGroupWithRole(ctx context.Context, groupID, userID, role string) error {

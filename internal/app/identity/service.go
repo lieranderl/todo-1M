@@ -179,6 +179,26 @@ func (s *Service) CreateGroup(ctx context.Context, actorUserID, name string) (Gr
 	return g, nil
 }
 
+func (s *Service) DeleteGroup(ctx context.Context, actorUserID, groupID string) error {
+	groupID = strings.TrimSpace(groupID)
+	if groupID == "" {
+		return ErrInvalidGroupID
+	}
+
+	actorRole, err := s.Repo.GetMembershipRole(ctx, actorUserID, groupID)
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			return ErrForbiddenGroup
+		}
+		return err
+	}
+	if actorRole != RoleOwner {
+		return ErrForbiddenRole
+	}
+
+	return s.Repo.DeleteGroup(ctx, groupID)
+}
+
 func (s *Service) AddMemberByUsername(ctx context.Context, actorUserID, groupID, username, role string) error {
 	groupID = strings.TrimSpace(groupID)
 	if groupID == "" {
