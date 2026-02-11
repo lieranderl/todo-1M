@@ -71,10 +71,10 @@ flowchart LR
 ### 1. UI Access and Navigation
 ```mermaid
 flowchart LR
-    U[User] --> L[/ and /login]
-    L -->|register/login success| W[/app]
-    W -->|toolbar nav| AR[/architecture]
-    W -->|toolbar nav| ST[/settings]
+    U[User] --> L["/ and /login"]
+    L -->|register/login success| W["/app"]
+    W -->|toolbar nav| AR["/architecture"]
+    W -->|toolbar nav| ST["/settings"]
     W -->|logout| L
     AR -->|logout| L
     ST -->|logout| L
