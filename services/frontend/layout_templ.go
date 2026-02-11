@@ -283,7 +283,7 @@ func PersistAuthEffects() templ.Component {
 	})
 }
 
-func LogoutButton(buttonID string) templ.Component {
+func SessionGuardEffects() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -304,20 +304,49 @@ func LogoutButton(buttonID string) templ.Component {
 			templ_7745c5c3_Var14 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<button id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<div data-on:storage__window=\"@setAll(($session_tick || 0) + 1, {include: /^session_tick$/})\"></div><div data-on:todo-auth-updated__window=\"@setAll(($session_tick || 0) + 1, {include: /^session_tick$/})\"></div><div data-on-interval__duration.15s.leading=\"@setAll(($session_tick || 0) + 1, {include: /^session_tick$/})\"></div><div data-effect=\"$session_tick >= 0 && (() => { const clearAuthStorage = () => { localStorage.removeItem('todo_access_token'); localStorage.removeItem('todo_refresh_token'); localStorage.removeItem('todo_username'); localStorage.removeItem('todo_user_id'); localStorage.removeItem('todo_active_group'); localStorage.removeItem('todo_connected_group'); localStorage.removeItem('todo_connected_group_name'); }; const parseTokenPayload = (token) => { const parts = token.split('.'); if (parts.length !== 3) { return null; } try { const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/'); const normalized = base64 + '='.repeat((4 - (base64.length % 4)) % 4); return JSON.parse(atob(normalized)); } catch (_err) { return null; } }; const formatRemaining = (seconds) => { const mins = Math.floor(seconds / 60); const secs = seconds % 60; return mins + ':' + (secs < 10 ? '0' : '') + secs; }; const token = localStorage.getItem('todo_access_token') || ''; if (token === '') { @setAll('', {include: /^session_notice$/}); return; } const payload = parseTokenPayload(token); if (!payload || typeof payload.exp !== 'number') { clearAuthStorage(); @setAll('', {include: /^(access_token|refresh_token|username|user_id|active_group_id|active_group_role|connected_group_id|connected_group_name|session_notice)$/}); return; } const remaining = payload.exp - Math.floor(Date.now() / 1000); if (remaining <= 0) { clearAuthStorage(); @setAll('', {include: /^(access_token|refresh_token|username|user_id|active_group_id|active_group_role|connected_group_id|connected_group_name|session_notice)$/}); return; } if (remaining <= 60) { @setAll('Session expires in ' + formatRemaining(remaining) + '. Click Refresh Token in /app or log in again.', {include: /^session_notice$/}); return; } @setAll('', {include: /^session_notice$/}); })()\"></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var15 string
-		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(buttonID)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/layout.templ`, Line: 77, Col: 15}
+		return nil
+	})
+}
+
+func LogoutButton(buttonID string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var15 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var15 == nil {
+			templ_7745c5c3_Var15 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<button id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\" class=\"btn btn-sm btn-error\" data-on:click=\"@post($api_base + '/api/v1/auth/logout', {payload: {refresh_token: $refresh_token}, filterSignals: {include: /^$/}}); @setAll('', {include: /^(access_token|refresh_token|username|user_id|active_group_id|connected_group_id|connected_group_name)$/}); localStorage.removeItem('todo_access_token'); localStorage.removeItem('todo_refresh_token'); localStorage.removeItem('todo_username'); localStorage.removeItem('todo_user_id'); localStorage.removeItem('todo_active_group'); localStorage.removeItem('todo_connected_group'); localStorage.removeItem('todo_connected_group_name'); window.location.assign('/login')\">Logout</button>")
+		var templ_7745c5c3_Var16 string
+		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(buttonID)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/layout.templ`, Line: 86, Col: 15}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\" class=\"btn btn-sm btn-error\" data-on:click=\"@post($api_base + '/api/v1/auth/logout', {payload: {refresh_token: $refresh_token}, filterSignals: {include: /^$/}}); @setAll('', {include: /^(access_token|refresh_token|username|user_id|active_group_id|connected_group_id|connected_group_name)$/}); localStorage.removeItem('todo_access_token'); localStorage.removeItem('todo_refresh_token'); localStorage.removeItem('todo_username'); localStorage.removeItem('todo_user_id'); localStorage.removeItem('todo_active_group'); localStorage.removeItem('todo_connected_group'); localStorage.removeItem('todo_connected_group_name'); window.location.assign('/login')\">Logout</button>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

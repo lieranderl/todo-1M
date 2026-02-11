@@ -6,23 +6,21 @@ templ SettingsPage() {
 		@AppHead("Todo-1M · Group Settings")
 		<body
 			class="min-h-screen"
-			data-signals="{api_base: window.location.origin.replace(':8081', ':8080').replace(':18081', ':18080'), access_token: localStorage.getItem('todo_access_token') || '', refresh_token: localStorage.getItem('todo_refresh_token') || '', username: localStorage.getItem('todo_username') || '', user_id: localStorage.getItem('todo_user_id') || ''}"
+			data-signals="{api_base: window.location.origin.replace(':8081', ':8080').replace(':18081', ':18080'), access_token: localStorage.getItem('todo_access_token') || '', refresh_token: localStorage.getItem('todo_refresh_token') || '', username: localStorage.getItem('todo_username') || '', user_id: localStorage.getItem('todo_user_id') || '', session_tick: 0, session_notice: ''}"
 		>
 			<div data-show="!$access_token">
 				@AuthGuard("Checking session...")
 			</div>
 			<div data-effect="!$access_token && window.location.assign('/login')"></div>
 			@PersistAuthEffects()
-
-				<div id="settings-shell" class="min-h-screen" data-show="$access_token">
-					<div class="min-h-screen lg:grid lg:grid-cols-[16.5rem_minmax(0,1fr)]">
-						@AppSidebar("settings")
-
-						<div class="flex min-w-0 flex-col">
-							@AppNavbar("Group Settings & RBAC", "Permission model and operational controls for your active workspace.", false)
-
+			@SessionGuardEffects()
+			<div id="settings-shell" class="min-h-screen" data-show="$access_token">
+				<div class="min-h-screen lg:grid lg:grid-cols-[16.5rem_minmax(0,1fr)]">
+					@AppSidebar("settings")
+					<div class="flex min-w-0 flex-col">
+						@AppNavbar("Group Settings & RBAC", "Permission model and operational controls for your active workspace.", false)
 						<main class="grid gap-4 p-4 md:gap-5 md:p-5 lg:p-6">
-							<div id="session-notice" class="alert alert-warning text-sm" hidden aria-hidden="true"></div>
+							<div id="session-notice" class="alert alert-warning text-sm" data-show="$session_notice" data-text="$session_notice"></div>
 							<section class="card card-border bg-base-100/85 shadow">
 								<div class="card-body p-4 gap-4">
 									<div class="space-y-1">
@@ -51,21 +49,20 @@ templ SettingsPage() {
 									</div>
 								</div>
 							</section>
-
 							<section class="card card-border bg-base-100/85 shadow">
 								<div class="card-body p-4 gap-4">
 									<div class="space-y-1">
 										<h2 class="card-title text-lg text-base-content">Operational Notes</h2>
 										<p class="text-sm text-base-content/70">Local deployment behavior and runtime expectations.</p>
 									</div>
-										<ul class="list-disc pl-5 text-sm text-base-content/70 space-y-2">
-											<li>Group data isolation is enforced in both query endpoints and command actions.</li>
-											<li>UI updates are eventual-consistent and projection-gated by event sequence offset.</li>
-											<li>Token refresh and logout are handled in browser state with secure API endpoints.</li>
-											<li>Use the Workspace page for all live member and todo management actions.</li>
-										</ul>
-									</div>
-								</section>
+									<ul class="list-disc pl-5 text-sm text-base-content/70 space-y-2">
+										<li>Group data isolation is enforced in both query endpoints and command actions.</li>
+										<li>UI updates are eventual-consistent and projection-gated by event sequence offset.</li>
+										<li>Token refresh and logout are handled in browser state with secure API endpoints.</li>
+										<li>Use the Workspace page for all live member and todo management actions.</li>
+									</ul>
+								</div>
+							</section>
 						</main>
 					</div>
 				</div>
@@ -73,4 +70,3 @@ templ SettingsPage() {
 		</body>
 	</html>
 }
-

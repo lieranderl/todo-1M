@@ -490,7 +490,7 @@ func cssAttrSelector(id, attr, value string) string {
 
 func renderGroupsList(groups []identity.GroupMembership, activeGroupID string) string {
 	var sb strings.Builder
-	sb.WriteString(`<ul id="groups-list" class="list bg-base-200/60 rounded-box border border-base-300/40 p-2 max-h-64 overflow-auto">`)
+	sb.WriteString(`<ul id="groups-list" class="list bg-base-200/60 rounded-box border border-base-300/40 p-2 max-h-64 overflow-auto" data-on-load="window.location.pathname === '/app' && $access_token && (() => { const connectButtons = Array.from(document.querySelectorAll('#groups-list button[data-connect-btn=\'1\'][data-group-id][data-group-name]')); if (connectButtons.length === 0) { const groupsListText = (document.getElementById('groups-list')?.textContent || '').toLowerCase(); if (groupsListText.includes('no groups yet')) { @setAll('', {include: /^(active_group_id|active_group_role|connected_group_id|connected_group_name)$/}); } return; } const byID = new Map(connectButtons.map((btn) => [btn.dataset.groupId || '', btn])); let targetID = $connected_group_id; if (!targetID || !byID.has(targetID)) { targetID = byID.has($active_group_id) ? $active_group_id : (connectButtons[0].dataset.groupId || ''); } if (!targetID) { return; } const targetButton = byID.get(targetID); if (!targetButton) { return; } @setAll(targetID, {include: /^active_group_id$/}); @setAll(targetButton.dataset.groupRole || '', {include: /^active_group_role$/}); @setAll(targetID, {include: /^connected_group_id$/}); @setAll(targetButton.dataset.groupName || '', {include: /^connected_group_name$/}); })()">`)
 
 	if len(groups) == 0 {
 		sb.WriteString(`<li class="list-row text-sm text-base-content/60">No groups yet. Create one to start collaborating.</li></ul>`)
@@ -526,7 +526,7 @@ func renderGroupsList(groups []identity.GroupMembership, activeGroupID string) s
 		sb.WriteString(html.EscapeString(name))
 		sb.WriteString(`" data-group-role="`)
 		sb.WriteString(html.EscapeString(group.Role))
-		sb.WriteString(`" data-on:click="@setAll(evt.currentTarget.dataset.groupId, {include: /^active_group_id$/}); @setAll(evt.currentTarget.dataset.groupRole, {include: /^active_group_role$/}); @setAll(evt.currentTarget.dataset.groupId, {include: /^connected_group_id$/}); @setAll(evt.currentTarget.dataset.groupName, {include: /^connected_group_name$/}); @get('/ui/workspace?group_id=' + evt.currentTarget.dataset.groupId, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}}); @get('/events?group_id=' + evt.currentTarget.dataset.groupId + '&token=' + $access_token, {openWhenHidden: true, filterSignals: {include: /^$/}})">Connect</button>`)
+		sb.WriteString(`" data-on:click="@setAll(evt.currentTarget.dataset.groupId, {include: /^active_group_id$/}); @setAll(evt.currentTarget.dataset.groupRole, {include: /^active_group_role$/}); @setAll(evt.currentTarget.dataset.groupId, {include: /^connected_group_id$/}); @setAll(evt.currentTarget.dataset.groupName, {include: /^connected_group_name$/}); @get('/ui/workspace?group_id=' + evt.currentTarget.dataset.groupId, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})">Connect</button>`)
 
 		if group.Role == identity.RoleOwner {
 			sb.WriteString(`<button class="btn btn-sm btn-error btn-outline w-24" data-indicator:delete_group_busy data-attr:disabled="$delete_group_busy" data-group-id="`)
@@ -587,10 +587,10 @@ func renderTodoList(todos []query.TodoView, actorUserID, role, activeGroupID str
 			sb.WriteString(html.EscapeString(todo.TodoID))
 			sb.WriteString(`" data-input-id="`)
 			sb.WriteString(html.EscapeString(inputID))
-			sb.WriteString(`" data-on:click="@post($api_base + '/api/v1/command', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {action: 'update-todo', title: document.getElementById(evt.currentTarget.dataset.inputId).value, group_id: $active_group_id, todo_id: evt.currentTarget.dataset.todoId}, filterSignals: {include: /^$/}}); @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})">Save</button>`)
+			sb.WriteString(`" data-on:click="@post($api_base + '/api/v1/command', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {action: 'update-todo', title: document.getElementById(evt.currentTarget.dataset.inputId).value, group_id: $active_group_id, todo_id: evt.currentTarget.dataset.todoId}, filterSignals: {include: /^$/}})">Save</button>`)
 			sb.WriteString(`<button class="btn btn-sm btn-error btn-outline" data-todo-id="`)
 			sb.WriteString(html.EscapeString(todo.TodoID))
-			sb.WriteString(`" data-on:click="@post($api_base + '/api/v1/command', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {action: 'delete-todo', title: '', group_id: $active_group_id, todo_id: evt.currentTarget.dataset.todoId}, filterSignals: {include: /^$/}}); @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})">Delete</button>`)
+			sb.WriteString(`" data-on:click="@post($api_base + '/api/v1/command', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {action: 'delete-todo', title: '', group_id: $active_group_id, todo_id: evt.currentTarget.dataset.todoId}, filterSignals: {include: /^$/}})">Delete</button>`)
 			sb.WriteString(`</div>`)
 		} else {
 			sb.WriteString(`<span class="badge badge-ghost badge-sm">read-only</span>`)

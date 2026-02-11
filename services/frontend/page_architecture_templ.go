@@ -37,7 +37,7 @@ func ArchitecturePage() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<body class=\"min-h-screen\" data-signals=\"{api_base: window.location.origin.replace(':8081', ':8080').replace(':18081', ':18080'), access_token: localStorage.getItem('todo_access_token') || '', refresh_token: localStorage.getItem('todo_refresh_token') || '', username: localStorage.getItem('todo_username') || '', user_id: localStorage.getItem('todo_user_id') || ''}\"><div data-show=\"!$access_token\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<body class=\"min-h-screen\" data-signals=\"{api_base: window.location.origin.replace(':8081', ':8080').replace(':18081', ':18080'), access_token: localStorage.getItem('todo_access_token') || '', refresh_token: localStorage.getItem('todo_refresh_token') || '', username: localStorage.getItem('todo_username') || '', user_id: localStorage.getItem('todo_user_id') || '', session_tick: 0, session_notice: ''}\"><div data-show=\"!$access_token\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -50,6 +50,10 @@ func ArchitecturePage() templ.Component {
 			return templ_7745c5c3_Err
 		}
 		templ_7745c5c3_Err = PersistAuthEffects().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = SessionGuardEffects().Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -69,7 +73,7 @@ func ArchitecturePage() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<main class=\"grid gap-4 p-4 md:gap-5 md:p-5 lg:p-6\"><div id=\"session-notice\" class=\"alert alert-warning text-sm\" hidden aria-hidden=\"true\"></div><section class=\"grid grid-cols-1 gap-3 md:grid-cols-3\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<main class=\"grid gap-4 p-4 md:gap-5 md:p-5 lg:p-6\"><div id=\"session-notice\" class=\"alert alert-warning text-sm\" data-show=\"$session_notice\" data-text=\"$session_notice\"></div><section class=\"grid grid-cols-1 gap-3 md:grid-cols-3\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
