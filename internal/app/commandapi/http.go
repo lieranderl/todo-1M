@@ -4,9 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/todo-1m/project/internal/app/identity"
@@ -18,11 +21,16 @@ type TodoReader interface {
 	GetTodoByID(ctx context.Context, todoID string) (query.TodoView, error)
 }
 
+type projectionWaiter interface {
+	WaitForCommandApplied(ctx context.Context, commandID, groupID string, timeout time.Duration) error
+}
+
 type Handler struct {
 	Service       *Service
 	Identity      *identity.Service
 	Todos         TodoReader
 	AllowedOrigin string
+	RateLimiter   *ipRateLimiter
 }
 
 func NewHandler(service *Service, identitySvc *identity.Service, todoReader TodoReader, allowedOrigin string) *Handler {
@@ -31,12 +39,14 @@ func NewHandler(service *Service, identitySvc *identity.Service, todoReader Todo
 		Identity:      identitySvc,
 		Todos:         todoReader,
 		AllowedOrigin: allowedOrigin,
+		RateLimiter:   newIPRateLimiter(240, time.Minute),
 	}
 }
 
 func (h *Handler) Router() http.Handler {
 	r := chi.NewRouter()
 	r.Use(h.corsMiddleware)
+	r.Use(h.rateLimitMiddleware)
 	r.Options("/*", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 	})
@@ -56,6 +66,55 @@ func (h *Handler) Router() http.Handler {
 	})
 
 	return r
+}
+
+type ipRateLimiter struct {
+	mu      sync.Mutex
+	limit   int
+	window  time.Duration
+	clients map[string]clientWindowState
+}
+
+type clientWindowState struct {
+	windowStart time.Time
+	count       int
+}
+
+func newIPRateLimiter(limit int, window time.Duration) *ipRateLimiter {
+	return &ipRateLimiter{
+		limit:   limit,
+		window:  window,
+		clients: map[string]clientWindowState{},
+	}
+}
+
+func (l *ipRateLimiter) Allow(key string, now time.Time) bool {
+	if l == nil {
+		return true
+	}
+
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	state, ok := l.clients[key]
+	if !ok || now.Sub(state.windowStart) >= l.window {
+		l.clients[key] = clientWindowState{windowStart: now, count: 1}
+		if len(l.clients) > 100_000 {
+			cutoff := now.Add(-2 * l.window)
+			for k, v := range l.clients {
+				if v.windowStart.Before(cutoff) {
+					delete(l.clients, k)
+				}
+			}
+		}
+		return true
+	}
+	if state.count >= l.limit {
+		return false
+	}
+	state.count++
+	l.clients[key] = state
+	return true
 }
 
 type registerRequest struct {
@@ -306,6 +365,12 @@ func (h *Handler) handleCreateCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if waiter, ok := h.Todos.(projectionWaiter); ok && strings.TrimSpace(resp.CommandID) != "" {
+		waitCtx, cancel := context.WithTimeout(r.Context(), 2500*time.Millisecond)
+		_ = waiter.WaitForCommandApplied(waitCtx, resp.CommandID, req.GroupID, 2200*time.Millisecond)
+		cancel()
+	}
+
 	h.writeJSON(w, http.StatusAccepted, resp)
 }
 
@@ -323,6 +388,44 @@ func (h *Handler) corsMiddleware(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (h *Handler) rateLimitMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodOptions {
+			next.ServeHTTP(w, r)
+			return
+		}
+		if h.RateLimiter == nil {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		key := clientRateKey(r)
+		if !h.RateLimiter.Allow(key, time.Now().UTC()) {
+			w.Header().Set("Retry-After", "60")
+			h.writeError(w, http.StatusTooManyRequests, "rate limit exceeded")
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func clientRateKey(r *http.Request) string {
+	if fwd := strings.TrimSpace(r.Header.Get("X-Forwarded-For")); fwd != "" {
+		if idx := strings.IndexByte(fwd, ','); idx >= 0 {
+			return strings.TrimSpace(fwd[:idx])
+		}
+		return fwd
+	}
+	if realIP := strings.TrimSpace(r.Header.Get("X-Real-IP")); realIP != "" {
+		return realIP
+	}
+	host, _, err := net.SplitHostPort(strings.TrimSpace(r.RemoteAddr))
+	if err == nil && host != "" {
+		return host
+	}
+	return strings.TrimSpace(r.RemoteAddr)
 }
 
 func (h *Handler) allowedOriginForRequest(requestOrigin string) string {

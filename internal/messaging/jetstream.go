@@ -2,6 +2,7 @@ package messaging
 
 import (
 	"errors"
+	"time"
 
 	"github.com/nats-io/nats.go"
 )
@@ -23,6 +24,9 @@ func EnsureStreams(js nats.JetStreamContext) error {
 				Retention: nats.LimitsPolicy,
 				Storage:   nats.FileStorage,
 				Replicas:  1,
+				MaxAge:    24 * time.Hour,
+				MaxBytes:  4 * 1024 * 1024 * 1024, // 4 GiB
+				Discard:   nats.DiscardOld,
 			}); addErr != nil {
 				return addErr
 			}
@@ -39,6 +43,9 @@ func EnsureStreams(js nats.JetStreamContext) error {
 				Retention: nats.LimitsPolicy,
 				Storage:   nats.FileStorage,
 				Replicas:  1,
+				MaxAge:    7 * 24 * time.Hour,
+				MaxBytes:  32 * 1024 * 1024 * 1024, // 32 GiB
+				Discard:   nats.DiscardOld,
 			}); addErr != nil {
 				return addErr
 			}

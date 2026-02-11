@@ -109,6 +109,14 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
   created_at timestamptz NOT NULL DEFAULT now()
 )`
 
+const createGroupMembersUserIDIdxSQL = `
+CREATE INDEX IF NOT EXISTS idx_group_members_user_id
+ON group_members (user_id)`
+
+const createGroupsCreatedAtIdxSQL = `
+CREATE INDEX IF NOT EXISTS idx_groups_created_at
+ON groups (created_at DESC)`
+
 func (r *PostgresRepository) EnsureSchema(ctx context.Context) error {
 	if _, err := r.Pool.Exec(ctx, createUsersSQL); err != nil {
 		return err
@@ -123,6 +131,12 @@ func (r *PostgresRepository) EnsureSchema(ctx context.Context) error {
 		return err
 	}
 	if _, err := r.Pool.Exec(ctx, createRefreshTokensSQL); err != nil {
+		return err
+	}
+	if _, err := r.Pool.Exec(ctx, createGroupMembersUserIDIdxSQL); err != nil {
+		return err
+	}
+	if _, err := r.Pool.Exec(ctx, createGroupsCreatedAtIdxSQL); err != nil {
 		return err
 	}
 	return nil

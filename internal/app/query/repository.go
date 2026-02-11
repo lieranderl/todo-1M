@@ -3,6 +3,7 @@ package query
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -132,4 +133,50 @@ func (r *TodoRepository) GetGroupProjectionOffset(ctx context.Context, groupID s
 		return 0, err
 	}
 	return offset, nil
+}
+
+func (r *TodoRepository) WaitForCommandApplied(ctx context.Context, commandID, groupID string, timeout time.Duration) error {
+	commandID = strings.TrimSpace(commandID)
+	groupID = strings.TrimSpace(groupID)
+	if commandID == "" || groupID == "" {
+		return nil
+	}
+	if timeout <= 0 {
+		timeout = 2 * time.Second
+	}
+
+	deadline := time.Now().Add(timeout)
+	delay := 20 * time.Millisecond
+	for time.Now().Before(deadline) {
+		var marker int
+		err := r.Pool.QueryRow(ctx,
+			`SELECT 1
+			 FROM todo_events
+			 WHERE command_id = $1 AND group_id = $2
+			 LIMIT 1`,
+			commandID, groupID,
+		).Scan(&marker)
+		if err == nil {
+			return nil
+		}
+		if !errors.Is(err, pgx.ErrNoRows) {
+			var pgErr *pgconn.PgError
+			if !(errors.As(err, &pgErr) && pgErr.Code == "42P01") {
+				return err
+			}
+		}
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(delay):
+		}
+
+		nextDelay := time.Duration(float64(delay) * 1.5)
+		if nextDelay > 250*time.Millisecond {
+			nextDelay = 250 * time.Millisecond
+		}
+		delay = nextDelay
+	}
+	return nil
 }

@@ -64,6 +64,14 @@ CREATE TABLE IF NOT EXISTS group_projection_offsets (
   updated_at timestamptz NOT NULL DEFAULT now()
 )`
 
+const createTodosGroupDeletedCreatedIdxSQL = `
+CREATE INDEX IF NOT EXISTS idx_todos_group_deleted_created
+ON todos (group_id, deleted_at, created_at DESC)`
+
+const createTodoEventsGroupOccurredIdxSQL = `
+CREATE INDEX IF NOT EXISTS idx_todo_events_group_occurred
+ON todo_events (group_id, occurred_at DESC)`
+
 const insertEventSQL = `
 INSERT INTO todo_events (
   event_id, command_id, group_id, actor_user_id, actor_name, todo_id,
@@ -141,6 +149,12 @@ func (r *EventRepository) EnsureSchema(ctx context.Context) error {
 		return err
 	}
 	if _, err := r.Pool.Exec(ctx, createGroupProjectionOffsetsSQL); err != nil {
+		return err
+	}
+	if _, err := r.Pool.Exec(ctx, createTodosGroupDeletedCreatedIdxSQL); err != nil {
+		return err
+	}
+	if _, err := r.Pool.Exec(ctx, createTodoEventsGroupOccurredIdxSQL); err != nil {
 		return err
 	}
 	return nil

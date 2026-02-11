@@ -4,13 +4,17 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/a-h/templ"
@@ -26,23 +30,27 @@ import (
 )
 
 var userStreams = newUserStreamRegistry()
+var groupStreams *groupStreamRegistry
 
 func main() {
-	ctx := context.Background()
+	runCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	streamerAddr := env.String("SSE_STREAMER_ADDR", env.DefaultStreamerAddr)
 	pgURL := env.String("DATABASE_URL", env.DefaultDatabaseURL)
 	jwtSecret := env.String("JWT_SECRET", "dev-insecure-change-me")
+	shutdownTimeout := parseDurationOrDefault(env.String("SHUTDOWN_TIMEOUT", "10s"), 10*time.Second)
 
 	tokenManager := identity.NewTokenManager(jwtSecret)
 
-	pool, err := pgxpool.New(ctx, pgURL)
+	pool, err := pgxpool.New(runCtx, pgURL)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer pool.Close()
 
 	identityRepo := identity.NewPostgresRepository(pool)
-	if err := waitForIdentitySchema(ctx, identityRepo, 30*time.Second); err != nil {
+	if err := waitForIdentitySchema(runCtx, identityRepo, 30*time.Second); err != nil {
 		log.Fatal(err)
 	}
 	queryRepo := query.NewTodoRepository(pool)
@@ -52,10 +60,24 @@ func main() {
 		log.Fatal(err)
 	}
 	defer client.Close()
-	nc := client.Conn
 	js := client.JS
+	groupStreams = newGroupStreamRegistry(js, queryRepo)
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	})
+	mux.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
+		if err := checkSSEStreamerReadiness(r.Context(), pool, client.Conn); err != nil {
+			http.Error(w, err.Error(), http.StatusServiceUnavailable)
+			return
+		}
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	})
 	mux.Handle("/", templ.Handler(frontend.LoginPage()))
 	mux.Handle("/login", templ.Handler(frontend.LoginPage()))
 	mux.Handle("/app", templ.Handler(frontend.WorkspacePage()))
@@ -174,7 +196,10 @@ func main() {
 			return
 		}
 
-		token := strings.TrimSpace(r.URL.Query().Get("token"))
+		token := platformauth.BearerToken(r.Header.Get("Authorization"))
+		if token == "" {
+			token = strings.TrimSpace(r.URL.Query().Get("token"))
+		}
 		if token == "" {
 			http.Error(w, "token is required", http.StatusUnauthorized)
 			return
@@ -231,107 +256,41 @@ func main() {
 			}
 			sendPatch(eventsSelector, "prepend", buf.String())
 		}
-		sendTodos := func(targetEventSeq uint64) {
-			waitForProjectionOffset(streamCtx, queryRepo, groupID, targetEventSeq, 2500*time.Millisecond)
-			todos, err := queryRepo.ListGroupTodos(streamCtx, groupID, 50)
-			if err != nil {
-				return
-			}
-			sendPatch(todoSelector, "outer", renderTodoList(todos, claims.Subject, role, groupID))
+		eventCh, unsubscribeGroup, err := groupStreams.Subscribe(groupID)
+		if err != nil {
+			http.Error(w, "stream subscription failed", http.StatusInternalServerError)
+			return
 		}
-
-		type streamEvent struct {
-			Event contracts.TodoEvent
-			Seq   uint64
-		}
-		eventCh := make(chan streamEvent, 64)
-		var sub *nats.Subscription
-		if js != nil && nc != nil && nc.IsConnected() {
-			sub, err = js.Subscribe(groupEventSubject(groupID), func(msg *nats.Msg) {
-				var event contracts.TodoEvent
-				if err := json.Unmarshal(msg.Data, &event); err != nil {
-					return
-				}
-
-				var eventSeq uint64
-				if meta, metaErr := msg.Metadata(); metaErr == nil {
-					eventSeq = meta.Sequence.Stream
-				}
-
-				select {
-				case eventCh <- streamEvent{Event: event, Seq: eventSeq}:
-				default:
-				}
-			}, nats.DeliverNew())
-			if err != nil {
-				log.Printf("nats subscribe failed: %v", err)
-			}
-		}
-		if sub != nil {
-			defer sub.Unsubscribe()
-		}
-
-		const todoRefreshDebounce = 75 * time.Millisecond
-		var (
-			pendingSeq   uint64
-			refreshTimer *time.Timer
-			refreshCh    <-chan time.Time
-		)
-		scheduleTodoRefresh := func(seq uint64) {
-			if seq > pendingSeq {
-				pendingSeq = seq
-			}
-			if refreshTimer == nil {
-				refreshTimer = time.NewTimer(todoRefreshDebounce)
-				refreshCh = refreshTimer.C
-				return
-			}
-			if !refreshTimer.Stop() {
-				select {
-				case <-refreshTimer.C:
-				default:
-				}
-			}
-			refreshTimer.Reset(todoRefreshDebounce)
-			refreshCh = refreshTimer.C
-		}
-		defer func() {
-			if refreshTimer == nil {
-				return
-			}
-			if !refreshTimer.Stop() {
-				select {
-				case <-refreshTimer.C:
-				default:
-				}
-			}
-		}()
+		defer unsubscribeGroup()
 
 		sendPatch("#todos", "outer", renderTodoList(nil, claims.Subject, role, groupID))
 		sendPatch("#events", "outer", renderEventsContainer(groupID))
 		sendFragment("Connected to Group Stream!", "Waiting for updates...")
-		sendTodos(0)
+		if initialTodos, err := queryRepo.ListGroupTodos(streamCtx, groupID, 50); err == nil {
+			sendPatch(todoSelector, "outer", renderTodoList(initialTodos, claims.Subject, role, groupID))
+		}
 
 		for {
 			select {
 			case <-streamCtx.Done():
 				return
-			case streamEvent := <-eventCh:
-				event := streamEvent.Event
-				switch event.EventType {
-				case "todo.created":
-					sendFragment(event.Title, "created by "+event.ActorName)
-				case "todo.updated":
-					sendFragment(event.Title, "updated by "+event.ActorName)
-				case "todo.deleted":
-					sendFragment("Todo deleted", "deleted by "+event.ActorName)
-				default:
-					sendFragment("Group updated", "change by "+event.ActorName)
+			case streamMsg := <-eventCh:
+				if streamMsg.Event != nil {
+					event := *streamMsg.Event
+					switch event.EventType {
+					case "todo.created":
+						sendFragment(event.Title, "created by "+event.ActorName)
+					case "todo.updated":
+						sendFragment(event.Title, "updated by "+event.ActorName)
+					case "todo.deleted":
+						sendFragment("Todo deleted", "deleted by "+event.ActorName)
+					default:
+						sendFragment("Group updated", "change by "+event.ActorName)
+					}
 				}
-				scheduleTodoRefresh(streamEvent.Seq)
-			case <-refreshCh:
-				sendTodos(pendingSeq)
-				refreshCh = nil
+				if streamMsg.Todos != nil {
+					sendPatch(todoSelector, "outer", renderTodoList(streamMsg.Todos, claims.Subject, role, groupID))
+				}
 			}
 		}
 	})
@@ -342,7 +301,10 @@ func main() {
 			return
 		}
 
-		token := strings.TrimSpace(r.URL.Query().Get("token"))
+		token := platformauth.BearerToken(r.Header.Get("Authorization"))
+		if token == "" {
+			token = strings.TrimSpace(r.URL.Query().Get("token"))
+		}
 		if token == "" {
 			http.Error(w, "token is required", http.StatusUnauthorized)
 			return
@@ -358,8 +320,34 @@ func main() {
 		w.WriteHeader(http.StatusNoContent)
 	})
 
+	server := &http.Server{
+		Addr:              streamerAddr,
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		// Keep WriteTimeout unset for long-lived SSE streams.
+		IdleTimeout: 120 * time.Second,
+	}
+
 	fmt.Printf("SSE Streamer listening on %s\n", streamerAddr)
-	log.Fatal(http.ListenAndServe(streamerAddr, mux))
+	serverErr := make(chan error, 1)
+	go func() {
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			serverErr <- err
+		}
+	}()
+
+	select {
+	case err := <-serverErr:
+		log.Fatal(err)
+	case <-runCtx.Done():
+	}
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	defer cancel()
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		log.Printf("sse-streamer graceful shutdown failed: %v", err)
+	}
 }
 
 type userStreamLease struct {
@@ -415,6 +403,224 @@ func (r *userStreamRegistry) Cancel(userID string) {
 	}
 }
 
+type groupStreamMessage struct {
+	Event *contracts.TodoEvent
+	Seq   uint64
+	Todos []query.TodoView
+}
+
+type groupStreamRegistry struct {
+	mu      sync.Mutex
+	js      nats.JetStreamContext
+	repo    *query.TodoRepository
+	byGroup map[string]*groupStream
+}
+
+type groupStream struct {
+	groupID string
+	js      nats.JetStreamContext
+	repo    *query.TodoRepository
+
+	mu           sync.Mutex
+	sub          *nats.Subscription
+	subscribers  map[string]chan groupStreamMessage
+	nextID       uint64
+	pendingSeq   uint64
+	refreshTimer *time.Timer
+}
+
+func newGroupStreamRegistry(js nats.JetStreamContext, repo *query.TodoRepository) *groupStreamRegistry {
+	return &groupStreamRegistry{
+		js:      js,
+		repo:    repo,
+		byGroup: map[string]*groupStream{},
+	}
+}
+
+func (r *groupStreamRegistry) Subscribe(groupID string) (<-chan groupStreamMessage, func(), error) {
+	r.mu.Lock()
+	stream, ok := r.byGroup[groupID]
+	if !ok {
+		stream = &groupStream{
+			groupID:      groupID,
+			js:           r.js,
+			repo:         r.repo,
+			subscribers:  map[string]chan groupStreamMessage{},
+			pendingSeq:   0,
+			refreshTimer: nil,
+		}
+		r.byGroup[groupID] = stream
+	}
+	r.mu.Unlock()
+
+	subID, ch, err := stream.addSubscriber()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	unsubscribe := func() {
+		empty := stream.removeSubscriber(subID)
+		if !empty {
+			return
+		}
+		r.mu.Lock()
+		current, ok := r.byGroup[groupID]
+		if ok && current == stream {
+			delete(r.byGroup, groupID)
+		}
+		r.mu.Unlock()
+	}
+
+	return ch, unsubscribe, nil
+}
+
+func (s *groupStream) addSubscriber() (string, chan groupStreamMessage, error) {
+	ch := make(chan groupStreamMessage, 64)
+
+	s.mu.Lock()
+	s.nextID++
+	subID := fmt.Sprintf("%s-%d", s.groupID, s.nextID)
+	s.subscribers[subID] = ch
+	s.mu.Unlock()
+
+	if err := s.ensureSubscription(); err != nil {
+		s.mu.Lock()
+		delete(s.subscribers, subID)
+		s.mu.Unlock()
+		return "", nil, err
+	}
+
+	return subID, ch, nil
+}
+
+func (s *groupStream) removeSubscriber(subID string) bool {
+	var (
+		shouldStop bool
+		sub        *nats.Subscription
+		timer      *time.Timer
+	)
+
+	s.mu.Lock()
+	delete(s.subscribers, subID)
+	if len(s.subscribers) == 0 {
+		shouldStop = true
+		sub = s.sub
+		timer = s.refreshTimer
+		s.sub = nil
+		s.refreshTimer = nil
+		s.pendingSeq = 0
+	}
+	s.mu.Unlock()
+
+	if shouldStop {
+		if timer != nil {
+			timer.Stop()
+		}
+		if sub != nil {
+			_ = sub.Unsubscribe()
+		}
+	}
+
+	return shouldStop
+}
+
+func (s *groupStream) ensureSubscription() error {
+	s.mu.Lock()
+	if s.sub != nil {
+		s.mu.Unlock()
+		return nil
+	}
+	s.mu.Unlock()
+
+	if s.js == nil {
+		return fmt.Errorf("jetstream is not configured")
+	}
+
+	sub, err := s.js.Subscribe(groupEventSubject(s.groupID), func(msg *nats.Msg) {
+		var event contracts.TodoEvent
+		if err := json.Unmarshal(msg.Data, &event); err != nil {
+			return
+		}
+
+		var eventSeq uint64
+		if meta, metaErr := msg.Metadata(); metaErr == nil {
+			eventSeq = meta.Sequence.Stream
+		}
+
+		s.broadcast(groupStreamMessage{Event: &event, Seq: eventSeq})
+		s.scheduleSnapshot(eventSeq)
+	}, nats.DeliverNew())
+	if err != nil {
+		return err
+	}
+
+	s.mu.Lock()
+	if s.sub != nil {
+		s.mu.Unlock()
+		_ = sub.Unsubscribe()
+		return nil
+	}
+	s.sub = sub
+	s.mu.Unlock()
+	return nil
+}
+
+func (s *groupStream) broadcast(msg groupStreamMessage) {
+	s.mu.Lock()
+	subs := make([]chan groupStreamMessage, 0, len(s.subscribers))
+	for _, ch := range s.subscribers {
+		subs = append(subs, ch)
+	}
+	s.mu.Unlock()
+
+	for _, ch := range subs {
+		select {
+		case ch <- msg:
+		default:
+		}
+	}
+}
+
+func (s *groupStream) scheduleSnapshot(seq uint64) {
+	const snapshotDebounce = 75 * time.Millisecond
+
+	s.mu.Lock()
+	if seq > s.pendingSeq {
+		s.pendingSeq = seq
+	}
+	if s.refreshTimer == nil {
+		s.refreshTimer = time.AfterFunc(snapshotDebounce, s.runSnapshotRefresh)
+		s.mu.Unlock()
+		return
+	}
+	s.refreshTimer.Reset(snapshotDebounce)
+	s.mu.Unlock()
+}
+
+func (s *groupStream) runSnapshotRefresh() {
+	s.mu.Lock()
+	targetSeq := s.pendingSeq
+	s.pendingSeq = 0
+	s.refreshTimer = nil
+	hasSubscribers := len(s.subscribers) > 0
+	s.mu.Unlock()
+
+	if !hasSubscribers {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	waitForProjectionOffset(ctx, s.repo, s.groupID, targetSeq, 2500*time.Millisecond)
+	todos, err := s.repo.ListGroupTodos(ctx, s.groupID, 50)
+	if err != nil {
+		return
+	}
+
+	s.broadcast(groupStreamMessage{Seq: targetSeq, Todos: todos})
+}
+
 func waitForIdentitySchema(ctx context.Context, repo *identity.PostgresRepository, timeout time.Duration) error {
 	deadline := time.Now().Add(timeout)
 	var lastErr error
@@ -429,6 +635,30 @@ func waitForIdentitySchema(ctx context.Context, repo *identity.PostgresRepositor
 		time.Sleep(500 * time.Millisecond)
 	}
 	return lastErr
+}
+
+func checkSSEStreamerReadiness(ctx context.Context, pool *pgxpool.Pool, conn *nats.Conn) error {
+	if conn == nil {
+		return errors.New("nats connection is nil")
+	}
+	if conn.Status() != nats.CONNECTED {
+		return fmt.Errorf("nats is not connected: %s", conn.Status().String())
+	}
+
+	checkCtx, cancel := context.WithTimeout(ctx, 1500*time.Millisecond)
+	defer cancel()
+	if err := pool.Ping(checkCtx); err != nil {
+		return fmt.Errorf("postgres ping failed: %w", err)
+	}
+	return nil
+}
+
+func parseDurationOrDefault(raw string, fallback time.Duration) time.Duration {
+	parsed, err := time.ParseDuration(raw)
+	if err != nil || parsed <= 0 {
+		return fallback
+	}
+	return parsed
 }
 
 func claimsFromAuthHeader(w http.ResponseWriter, r *http.Request, tokenManager platformauth.Manager) (platformauth.Claims, bool) {
@@ -531,7 +761,7 @@ func renderGroupsList(groups []identity.GroupMembership, activeGroupID string) s
 		if group.Role == identity.RoleOwner {
 			sb.WriteString(`<button class="btn btn-sm btn-error btn-outline w-24" data-indicator:delete_group_busy data-attr:disabled="$delete_group_busy" data-group-id="`)
 			sb.WriteString(html.EscapeString(group.GroupID))
-			sb.WriteString(`" data-on:click="evt.stopPropagation(); @setAll(true, {include: /^groups_dirty$/}); @setAll((evt.currentTarget.dataset.groupId === $active_group_id) ? '' : $active_group_id, {include: /^active_group_id$/}); @setAll((evt.currentTarget.dataset.groupId === $active_group_id) ? '' : $active_group_role, {include: /^active_group_role$/}); @setAll((evt.currentTarget.dataset.groupId === $connected_group_id) ? '' : $connected_group_id, {include: /^connected_group_id$/}); @setAll((evt.currentTarget.dataset.groupId === $connected_group_id) ? '' : $connected_group_name, {include: /^connected_group_name$/}); evt.currentTarget.dataset.groupId === $connected_group_id && @get('/events/disconnect?token=' + $access_token, {filterSignals: {include: /^$/}}); @delete($api_base + '/api/v1/groups/' + evt.currentTarget.dataset.groupId, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})">Delete</button>`)
+			sb.WriteString(`" data-on:click="evt.stopPropagation(); @setAll(true, {include: /^groups_dirty$/}); @setAll((evt.currentTarget.dataset.groupId === $active_group_id) ? '' : $active_group_id, {include: /^active_group_id$/}); @setAll((evt.currentTarget.dataset.groupId === $active_group_id) ? '' : $active_group_role, {include: /^active_group_role$/}); @setAll((evt.currentTarget.dataset.groupId === $connected_group_id) ? '' : $connected_group_id, {include: /^connected_group_id$/}); @setAll((evt.currentTarget.dataset.groupId === $connected_group_id) ? '' : $connected_group_name, {include: /^connected_group_name$/}); evt.currentTarget.dataset.groupId === $connected_group_id && @get('/events/disconnect', {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}}); @delete($api_base + '/api/v1/groups/' + evt.currentTarget.dataset.groupId, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})">Delete</button>`)
 		} else {
 			sb.WriteString(`<span class="btn btn-sm btn-ghost w-24 invisible" aria-hidden="true">Delete</span>`)
 		}

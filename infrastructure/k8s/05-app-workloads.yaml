@@ -1,0 +1,283 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: todo-app-config
+  namespace: default
+data:
+  NATS_URL: nats://nats.default.svc:4222
+  UI_ORIGIN: https://todo.app
+  COMMAND_API_ADDR: :8080
+  SSE_STREAMER_ADDR: :8081
+  DOMAIN_ENGINE_HEALTH_ADDR: :8082
+  DATA_SINK_HEALTH_ADDR: :8083
+  SHUTDOWN_TIMEOUT: 15s
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: command-api
+  namespace: default
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: command-api
+  template:
+    metadata:
+      labels:
+        app: command-api
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: command-api
+          image: ghcr.io/todo-1m/command-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: todo-app-config
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: todo-app-secrets
+                  key: database-url
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: todo-app-secrets
+                  key: jwt-secret
+          startupProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 2
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: command-api
+  namespace: default
+spec:
+  selector:
+    app: command-api
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sse-streamer
+  namespace: default
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: sse-streamer
+  template:
+    metadata:
+      labels:
+        app: sse-streamer
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: sse-streamer
+          image: ghcr.io/todo-1m/sse-streamer:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8081
+          envFrom:
+            - configMapRef:
+                name: todo-app-config
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: todo-app-secrets
+                  key: database-url
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: todo-app-secrets
+                  key: jwt-secret
+          startupProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 2
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sse-streamer
+  namespace: default
+spec:
+  selector:
+    app: sse-streamer
+  ports:
+    - name: http
+      port: 8081
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: domain-engine
+  namespace: default
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: domain-engine
+  template:
+    metadata:
+      labels:
+        app: domain-engine
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: domain-engine
+          image: ghcr.io/todo-1m/domain-engine:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: health
+              containerPort: 8082
+          envFrom:
+            - configMapRef:
+                name: todo-app-config
+          startupProbe:
+            httpGet:
+              path: /readyz
+              port: health
+            periodSeconds: 2
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: health
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: health
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 150m
+              memory: 192Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: data-sink
+  namespace: default
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: data-sink
+  template:
+    metadata:
+      labels:
+        app: data-sink
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: data-sink
+          image: ghcr.io/todo-1m/data-sink:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: health
+              containerPort: 8083
+          envFrom:
+            - configMapRef:
+                name: todo-app-config
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: todo-app-secrets
+                  key: database-url
+          startupProbe:
+            httpGet:
+              path: /readyz
+              port: health
+            periodSeconds: 2
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: health
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: health
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi

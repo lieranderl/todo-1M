@@ -30,6 +30,8 @@ A high-performance, event-driven Todo application designed for 1 million concurr
 | `POST` | `/api/v1/groups/{groupID}/members` | Bearer | Add group member (`owner/admin`) |
 | `PATCH` | `/api/v1/groups/{groupID}/members/role` | Bearer | Change member role (`owner` only) |
 | `POST` | `/api/v1/command` | Bearer | Submit todo commands (`create/update/delete`) |
+| `GET` | `/healthz` | Public | Liveness probe endpoint |
+| `GET` | `/readyz` | Public | Readiness probe (NATS + Postgres checks) |
 
 ### sse-streamer (`:8081`)
 | Method | Path | Auth | Purpose |
@@ -37,12 +39,15 @@ A high-performance, event-driven Todo application designed for 1 million concurr
 | `GET` | `/api/v1/groups` | Bearer | Read groups for current user |
 | `GET` | `/api/v1/todos?group_id=...` | Bearer | Read projected todos for a group |
 | `GET` | `/ui/workspace?group_id=...` | Bearer | Return Datastar HTML patches (groups + todos) |
-| `GET` | `/events?group_id=...&token=...` | Query token | Open SSE stream for selected group |
-| `GET` | `/events/disconnect?token=...` | Query token | Cancel active SSE stream for current user |
+| `GET` | `/events?group_id=...` | Bearer | Open SSE stream for selected group |
+| `GET` | `/events/disconnect` | Bearer | Cancel active SSE stream for current user |
+| `GET` | `/healthz` | Public | Liveness probe endpoint |
+| `GET` | `/readyz` | Public | Readiness probe (NATS + Postgres checks) |
 
 Notes:
 - Group name/role label is non-interactive.
 - `Connect` button is the only control that opens `/events` stream for a group.
+- Query-token auth for `/events` and `/events/disconnect` remains as temporary fallback for legacy clients.
 
 ## System Diagram (End-to-End)
 ```mermaid
@@ -167,6 +172,8 @@ flowchart LR
     R --> A[command-api Service]
     R --> S[sse-streamer Service]
 ```
+
+Application workloads and probes are defined in `infrastructure/k8s/05-app-workloads.yaml`.
 
 ## Prerequisites
 - **Go 1.22+**: [Download](https://go.dev/dl/)
