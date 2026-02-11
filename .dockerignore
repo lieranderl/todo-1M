@@ -1,0 +1,16 @@
+.git
+.gitignore
+.runtime
+bin
+node_modules
+ref_design
+infrastructure
+integration
+*.md
+npm-debug.log*
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx

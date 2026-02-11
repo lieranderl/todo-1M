@@ -174,6 +174,115 @@ flowchart LR
 ```
 
 Application workloads and probes are defined in `infrastructure/k8s/05-app-workloads.yaml`.
+Autoscaling and disruption safeguards are defined in `infrastructure/k8s/07-scalability.yaml`.
+
+### Kubernetes Cluster Lifecycle
+
+```bash
+# status helper
+make k8s-status
+
+# Docker Desktop
+docker desktop start
+docker desktop stop
+
+# kind
+kind create cluster --name todo-1m
+kind delete cluster --name todo-1m
+```
+
+Notes:
+- `make k8s-status` only checks reachability/context and does not start/stop clusters.
+- Docker Desktop does not provide a reliable CLI command to stop only Kubernetes while keeping the engine fully running; use Docker Desktop Settings -> Kubernetes to disable/enable it.
+
+### Kubernetes Troubleshooting
+
+```bash
+# 1) Verify context + cluster reachability
+kubectl config current-context
+make k8s-status
+
+# 2) Verify app workloads are healthy
+kubectl -n default get deploy,pods,svc -o wide
+
+# 3) Recreate local access tunnels (keep both running)
+kubectl -n default port-forward svc/command-api 18080:8080
+kubectl -n default port-forward svc/sse-streamer 18081:8081
+
+# 4) Quick endpoint checks from your machine
+curl http://127.0.0.1:18080/healthz
+curl -I http://127.0.0.1:18081/login
+```
+
+If a port-forward dies, start it again.  
+If `Cross-Origin Request Blocked` appears with `status code: (null)`, treat it as a connectivity issue first (usually a dead port-forward).
+
+### Kubernetes Deployment Quickstart
+
+#### Option A: No GitHub Repo (Local Images, Recommended for now)
+
+1. Build images locally:
+   ```bash
+   # use linux/arm64 for arm64 clusters (for example Docker Desktop k8s on Apple Silicon)
+   docker build --platform linux/amd64 -f Dockerfile --build-arg SERVICE=command-api -t todo-1m/command-api:latest .
+   docker build --platform linux/amd64 -f Dockerfile --build-arg SERVICE=sse-streamer -t todo-1m/sse-streamer:latest .
+   docker build --platform linux/amd64 -f Dockerfile --build-arg SERVICE=domain-engine -t todo-1m/domain-engine:latest .
+   docker build --platform linux/amd64 -f Dockerfile --build-arg SERVICE=data-sink -t todo-1m/data-sink:latest .
+   ```
+
+2. If you use `kind`, load images into the cluster:
+   ```bash
+   kind load docker-image todo-1m/command-api:latest
+   kind load docker-image todo-1m/sse-streamer:latest
+   kind load docker-image todo-1m/domain-engine:latest
+   kind load docker-image todo-1m/data-sink:latest
+   ```
+
+3. Create application secrets:
+   ```bash
+   # set a strong random value for jwt-secret before apply
+   kubectl apply -f infrastructure/k8s/06-app-secrets.example.yaml
+   ```
+
+4. Apply manifests:
+   ```bash
+   kubectl apply -f infrastructure/nats/01-nats-cluster.yaml
+   kubectl apply -f infrastructure/cnpg/01-cluster.yaml
+   kubectl apply -f infrastructure/k8s/01-gateway-class.yaml
+   kubectl apply -f infrastructure/k8s/02-gateway.yaml
+   kubectl apply -f infrastructure/k8s/03-http-route.yaml
+   kubectl apply -f infrastructure/k8s/04-jwt-policy.yaml
+   kubectl kustomize infrastructure/k8s/local --load-restrictor=LoadRestrictionsNone | kubectl apply -f -
+   kubectl apply -f infrastructure/k8s/07-scalability.yaml
+   ```
+
+#### Option B: GHCR (when repo exists)
+
+1. Build/push images:
+   ```bash
+   docker login ghcr.io -u <github-username>
+   make image-build-push
+   ```
+   Optional overrides:
+   ```bash
+   make image-build-push IMAGE_OWNER=<github-username> IMAGE_TAG=<tag> IMAGE_PLATFORM=linux/amd64
+   ```
+
+2. Create pull secret and apply base workloads:
+   ```bash
+   kubectl create secret docker-registry ghcr-creds \
+     --docker-server=ghcr.io \
+     --docker-username=<github-username> \
+     --docker-password=<github-pat-with-read:packages> \
+     --namespace default
+
+   # set a strong random value for jwt-secret before apply
+   kubectl apply -f infrastructure/k8s/06-app-secrets.example.yaml
+   kubectl apply -f infrastructure/k8s/05-app-workloads.yaml
+   kubectl apply -f infrastructure/k8s/07-scalability.yaml
+   ```
+
+3. Ensure `infrastructure/k8s/05-app-workloads.yaml` image digests match the images you pushed.
 
 ## Prerequisites
 - **Go 1.22+**: [Download](https://go.dev/dl/)
@@ -186,7 +295,13 @@ Application workloads and probes are defined in `infrastructure/k8s/05-app-workl
 
 ### Environment Variables (optional)
 - `NATS_URL` (default: `nats://localhost:4222`)
+- `NATS_CONNECT_TIMEOUT` (default: `90s`)
 - `DATABASE_URL` (default: `postgres://app:password@localhost:5432/app?sslmode=disable`)
+- `DB_MIN_CONNS` (default: `2`)
+- `DB_MAX_CONNS` (default: `20`)
+- `DB_MAX_CONN_LIFETIME` (default: `30m`)
+- `DB_MAX_CONN_IDLE_TIME` (default: `5m`)
+- `DB_HEALTH_CHECK_PERIOD` (default: `30s`)
 
 ### 1. Start Infrastructure
 Spin up the local NATS JetStream and Postgres instances using Docker Compose.

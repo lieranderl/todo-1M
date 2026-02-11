@@ -44,7 +44,7 @@ func EnsureStreams(js nats.JetStreamContext) error {
 				Storage:   nats.FileStorage,
 				Replicas:  1,
 				MaxAge:    7 * 24 * time.Hour,
-				MaxBytes:  32 * 1024 * 1024 * 1024, // 32 GiB
+				MaxBytes:  8 * 1024 * 1024 * 1024, // 8 GiB (must fit per-node JetStream max_file)
 				Discard:   nats.DiscardOld,
 			}); addErr != nil {
 				return addErr

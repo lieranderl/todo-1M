@@ -5,11 +5,18 @@ metadata:
   namespace: default
 data:
   NATS_URL: nats://nats.default.svc:4222
-  UI_ORIGIN: https://todo.app
+  # UI_ORIGIN: https://todo.app
+  UI_ORIGIN: http://localhost:18081
   COMMAND_API_ADDR: :8080
   SSE_STREAMER_ADDR: :8081
   DOMAIN_ENGINE_HEALTH_ADDR: :8082
   DATA_SINK_HEALTH_ADDR: :8083
+  NATS_CONNECT_TIMEOUT: 90s
+  DB_MIN_CONNS: "2"
+  DB_MAX_CONNS: "20"
+  DB_MAX_CONN_LIFETIME: 30m
+  DB_MAX_CONN_IDLE_TIME: 5m
+  DB_HEALTH_CHECK_PERIOD: 30s
   SHUTDOWN_TIMEOUT: 15s
 ---
 apiVersion: apps/v1
@@ -19,6 +26,11 @@ metadata:
   namespace: default
 spec:
   replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app: command-api
@@ -28,10 +40,12 @@ spec:
         app: command-api
     spec:
       terminationGracePeriodSeconds: 30
+      imagePullSecrets:
+        - name: ghcr-creds
       containers:
         - name: command-api
-          image: ghcr.io/todo-1m/command-api:latest
-          imagePullPolicy: IfNotPresent
+          image: ghcr.io/lieranderl/todo-1m-command-api:latest@sha256:f47e2b1e1a735085045779c3290d7a4a5434e40f0ee10488d5d3ed6600a4da47
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8080
@@ -42,8 +56,8 @@ spec:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: todo-app-secrets
-                  key: database-url
+                  name: todo-db-app
+                  key: uri
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
@@ -97,6 +111,11 @@ metadata:
   namespace: default
 spec:
   replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app: sse-streamer
@@ -106,10 +125,12 @@ spec:
         app: sse-streamer
     spec:
       terminationGracePeriodSeconds: 30
+      imagePullSecrets:
+        - name: ghcr-creds
       containers:
         - name: sse-streamer
-          image: ghcr.io/todo-1m/sse-streamer:latest
-          imagePullPolicy: IfNotPresent
+          image: ghcr.io/lieranderl/todo-1m-sse-streamer:latest@sha256:7b8ac1e894c983620abf08ced4cdca5916a239306ad6791f48d6d0d3c6b5bc13
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8081
@@ -120,8 +141,8 @@ spec:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: todo-app-secrets
-                  key: database-url
+                  name: todo-db-app
+                  key: uri
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
@@ -175,6 +196,11 @@ metadata:
   namespace: default
 spec:
   replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app: domain-engine
@@ -184,10 +210,12 @@ spec:
         app: domain-engine
     spec:
       terminationGracePeriodSeconds: 30
+      imagePullSecrets:
+        - name: ghcr-creds
       containers:
         - name: domain-engine
-          image: ghcr.io/todo-1m/domain-engine:latest
-          imagePullPolicy: IfNotPresent
+          image: ghcr.io/lieranderl/todo-1m-domain-engine:latest@sha256:4bb78e0906ca1b763c31b109ab08560c93c3a2e5d9e5ce610248daf94685b75e
+          imagePullPolicy: Always
           ports:
             - name: health
               containerPort: 8082
@@ -229,6 +257,11 @@ metadata:
   namespace: default
 spec:
   replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app: data-sink
@@ -238,10 +271,12 @@ spec:
         app: data-sink
     spec:
       terminationGracePeriodSeconds: 30
+      imagePullSecrets:
+        - name: ghcr-creds
       containers:
         - name: data-sink
-          image: ghcr.io/todo-1m/data-sink:latest
-          imagePullPolicy: IfNotPresent
+          image: ghcr.io/lieranderl/todo-1m-data-sink:latest@sha256:51e33c2bcb3fefa96ac975c51fdb30eca69b9ae7483780f141e3995fc7f83521
+          imagePullPolicy: Always
           ports:
             - name: health
               containerPort: 8083
@@ -252,8 +287,8 @@ spec:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: todo-app-secrets
-                  key: database-url
+                  name: todo-db-app
+                  key: uri
           startupProbe:
             httpGet:
               path: /readyz

@@ -22,9 +22,9 @@ func main() {
 	defer stop()
 
 	healthAddr := env.String("DOMAIN_ENGINE_HEALTH_ADDR", ":8082")
-	shutdownTimeout := parseDurationOrDefault(env.String("SHUTDOWN_TIMEOUT", "10s"), 10*time.Second)
+	shutdownTimeout := env.Duration("SHUTDOWN_TIMEOUT", 10*time.Second)
 
-	client, err := natsutil.ConnectJetStreamWithRetry(env.String("NATS_URL", env.DefaultNATSURL), 20*time.Second)
+	client, err := natsutil.ConnectJetStreamWithRetry(env.String("NATS_URL", env.DefaultNATSURL), env.Duration("NATS_CONNECT_TIMEOUT", 90*time.Second))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -110,12 +110,4 @@ func main() {
 	if err := healthServer.Shutdown(shutdownCtx); err != nil {
 		log.Printf("domain-engine health server shutdown failed: %v", err)
 	}
-}
-
-func parseDurationOrDefault(raw string, fallback time.Duration) time.Duration {
-	parsed, err := time.ParseDuration(raw)
-	if err != nil || parsed <= 0 {
-		return fallback
-	}
-	return parsed
 }

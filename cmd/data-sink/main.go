@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nats-io/nats.go"
 	"github.com/todo-1m/project/internal/app/datasink"
+	"github.com/todo-1m/project/internal/platform/dbpool"
 	"github.com/todo-1m/project/internal/platform/env"
 	"github.com/todo-1m/project/internal/platform/natsutil"
 )
@@ -25,9 +26,9 @@ func main() {
 	natsURL := env.String("NATS_URL", env.DefaultNATSURL)
 	pgURL := env.String("DATABASE_URL", env.DefaultDatabaseURL)
 	healthAddr := env.String("DATA_SINK_HEALTH_ADDR", ":8083")
-	shutdownTimeout := parseDurationOrDefault(env.String("SHUTDOWN_TIMEOUT", "10s"), 10*time.Second)
+	shutdownTimeout := env.Duration("SHUTDOWN_TIMEOUT", 10*time.Second)
 
-	pool, err := pgxpool.New(runCtx, pgURL)
+	pool, err := dbpool.New(runCtx, pgURL)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -40,7 +41,7 @@ func main() {
 	service := datasink.NewService(repository)
 	ready := atomic.Bool{}
 
-	client, err := natsutil.ConnectJetStreamWithRetry(natsURL, 20*time.Second)
+	client, err := natsutil.ConnectJetStreamWithRetry(natsURL, env.Duration("NATS_CONNECT_TIMEOUT", 90*time.Second))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -170,12 +171,4 @@ func checkDataSinkReadiness(ctx context.Context, pool *pgxpool.Pool, conn *nats.
 		return err
 	}
 	return nil
-}
-
-func parseDurationOrDefault(raw string, fallback time.Duration) time.Duration {
-	parsed, err := time.ParseDuration(raw)
-	if err != nil || parsed <= 0 {
-		return fallback
-	}
-	return parsed
 }

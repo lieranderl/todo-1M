@@ -7,7 +7,7 @@ spec:
   instances: 3
   storage:
     size: 20Gi
-    storageClass: "local-storage" # Assumed existence based on constraints (NVMe)
+    storageClass: "standard"
   bootstrap:
     initdb:
       database: app

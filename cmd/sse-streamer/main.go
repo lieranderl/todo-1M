@@ -24,6 +24,7 @@ import (
 	"github.com/todo-1m/project/internal/app/query"
 	"github.com/todo-1m/project/internal/contracts"
 	platformauth "github.com/todo-1m/project/internal/platform/auth"
+	"github.com/todo-1m/project/internal/platform/dbpool"
 	"github.com/todo-1m/project/internal/platform/env"
 	"github.com/todo-1m/project/internal/platform/natsutil"
 	"github.com/todo-1m/project/services/frontend"
@@ -39,11 +40,11 @@ func main() {
 	streamerAddr := env.String("SSE_STREAMER_ADDR", env.DefaultStreamerAddr)
 	pgURL := env.String("DATABASE_URL", env.DefaultDatabaseURL)
 	jwtSecret := env.String("JWT_SECRET", "dev-insecure-change-me")
-	shutdownTimeout := parseDurationOrDefault(env.String("SHUTDOWN_TIMEOUT", "10s"), 10*time.Second)
+	shutdownTimeout := env.Duration("SHUTDOWN_TIMEOUT", 10*time.Second)
 
 	tokenManager := identity.NewTokenManager(jwtSecret)
 
-	pool, err := pgxpool.New(runCtx, pgURL)
+	pool, err := dbpool.New(runCtx, pgURL)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -55,7 +56,7 @@ func main() {
 	}
 	queryRepo := query.NewTodoRepository(pool)
 
-	client, err := natsutil.ConnectJetStreamWithRetry(env.String("NATS_URL", env.DefaultNATSURL), 20*time.Second)
+	client, err := natsutil.ConnectJetStreamWithRetry(env.String("NATS_URL", env.DefaultNATSURL), env.Duration("NATS_CONNECT_TIMEOUT", 90*time.Second))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -651,14 +652,6 @@ func checkSSEStreamerReadiness(ctx context.Context, pool *pgxpool.Pool, conn *na
 		return fmt.Errorf("postgres ping failed: %w", err)
 	}
 	return nil
-}
-
-func parseDurationOrDefault(raw string, fallback time.Duration) time.Duration {
-	parsed, err := time.ParseDuration(raw)
-	if err != nil || parsed <= 0 {
-		return fallback
-	}
-	return parsed
 }
 
 func claimsFromAuthHeader(w http.ResponseWriter, r *http.Request, tokenManager platformauth.Manager) (platformauth.Claims, bool) {

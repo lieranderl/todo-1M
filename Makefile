@@ -1,4 +1,4 @@
-.PHONY: all tidy css test test-integration build predeploy predeploy-full run-infra run-services clean clean-local templ verify prepare-runtime wait-infra stop-services run-all stop-all
+.PHONY: all tidy css test test-integration build predeploy predeploy-full run-infra run-services clean clean-local templ verify prepare-runtime wait-infra stop-services run-all stop-all k8s-status image-build image-push image-build-push image-print
 
 all: tidy css templ test
 
@@ -11,6 +11,12 @@ COMMAND_PID := $(PID_DIR)/command.pid
 STREAMER_PID := $(PID_DIR)/streamer.pid
 ENGINE_PID := $(PID_DIR)/engine.pid
 SINK_PID := $(PID_DIR)/sink.pid
+SERVICES := command-api sse-streamer domain-engine data-sink
+IMAGE_REGISTRY ?= ghcr.io
+IMAGE_OWNER ?= lieranderl
+IMAGE_PREFIX ?= todo-1m
+IMAGE_TAG ?= latest
+IMAGE_PLATFORM ?= linux/arm64
 
 tidy:
 	go mod tidy
@@ -120,3 +126,33 @@ stop-all: stop-services
 	@echo "Stopping infrastructure..."
 	@docker-compose down
 	@echo "All stopped."
+
+k8s-status:
+	@echo "Current context: $$(kubectl config current-context 2>/dev/null || echo 'none')"
+	@kubectl get nodes -o wide >/dev/null 2>&1 && kubectl get nodes -o wide || echo "Kubernetes API is not reachable (cluster may be stopped)."
+
+image-print:
+	@for svc in $(SERVICES); do \
+		echo "$(IMAGE_REGISTRY)/$(IMAGE_OWNER)/$(IMAGE_PREFIX)-$$svc:$(IMAGE_TAG)"; \
+	done
+
+image-build:
+	@echo "Building images for platform $(IMAGE_PLATFORM)..."
+	@for svc in $(SERVICES); do \
+		echo "==> $$svc"; \
+		docker buildx build --platform $(IMAGE_PLATFORM) -f Dockerfile --build-arg SERVICE=$$svc -t $(IMAGE_REGISTRY)/$(IMAGE_OWNER)/$(IMAGE_PREFIX)-$$svc:$(IMAGE_TAG) --load . || exit 1; \
+	done
+
+image-push:
+	@echo "Pushing images..."
+	@for svc in $(SERVICES); do \
+		echo "==> $$svc"; \
+		docker push $(IMAGE_REGISTRY)/$(IMAGE_OWNER)/$(IMAGE_PREFIX)-$$svc:$(IMAGE_TAG) || exit 1; \
+	done
+
+image-build-push:
+	@echo "Building and pushing images for platform $(IMAGE_PLATFORM)..."
+	@for svc in $(SERVICES); do \
+		echo "==> $$svc"; \
+		docker buildx build --platform $(IMAGE_PLATFORM) -f Dockerfile --build-arg SERVICE=$$svc -t $(IMAGE_REGISTRY)/$(IMAGE_OWNER)/$(IMAGE_PREFIX)-$$svc:$(IMAGE_TAG) --push . || exit 1; \
+	done

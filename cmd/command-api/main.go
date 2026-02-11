@@ -16,6 +16,7 @@ import (
 	"github.com/todo-1m/project/internal/app/commandapi"
 	"github.com/todo-1m/project/internal/app/identity"
 	"github.com/todo-1m/project/internal/app/query"
+	"github.com/todo-1m/project/internal/platform/dbpool"
 	"github.com/todo-1m/project/internal/platform/env"
 	"github.com/todo-1m/project/internal/platform/natsutil"
 )
@@ -28,9 +29,9 @@ func main() {
 	uiOrigin := env.String("UI_ORIGIN", "http://localhost:8081")
 	pgURL := env.String("DATABASE_URL", env.DefaultDatabaseURL)
 	jwtSecret := env.String("JWT_SECRET", "dev-insecure-change-me")
-	shutdownTimeout := parseDurationOrDefault(env.String("SHUTDOWN_TIMEOUT", "10s"), 10*time.Second)
+	shutdownTimeout := env.Duration("SHUTDOWN_TIMEOUT", 10*time.Second)
 
-	pool, err := pgxpool.New(runCtx, pgURL)
+	pool, err := dbpool.New(runCtx, pgURL)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -43,7 +44,7 @@ func main() {
 	identitySvc := identity.NewService(identityRepo, identity.NewTokenManager(jwtSecret))
 	todoQuery := query.NewTodoRepository(pool)
 
-	client, err := natsutil.ConnectJetStreamWithRetry(env.String("NATS_URL", env.DefaultNATSURL), 20*time.Second)
+	client, err := natsutil.ConnectJetStreamWithRetry(env.String("NATS_URL", env.DefaultNATSURL), env.Duration("NATS_CONNECT_TIMEOUT", 90*time.Second))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -129,12 +130,4 @@ func checkCommandAPIReadiness(ctx context.Context, pool *pgxpool.Pool, conn *nat
 		return fmt.Errorf("postgres ping failed: %w", err)
 	}
 	return nil
-}
-
-func parseDurationOrDefault(raw string, fallback time.Duration) time.Duration {
-	parsed, err := time.ParseDuration(raw)
-	if err != nil || parsed <= 0 {
-		return fallback
-	}
-	return parsed
 }
