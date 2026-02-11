@@ -87,9 +87,12 @@ sequenceDiagram
 | Read group todos + SSE stream | ✅ | ✅ | ✅ |
 
 Auth/session notes:
-- Access token is short-lived.
+- Access token TTL is **15 minutes**.
+- Refresh token TTL is **30 days** with rotation on refresh.
 - Refresh token rotation is supported via `POST /api/v1/auth/refresh`.
 - Logout revokes refresh token via `POST /api/v1/auth/logout`.
+- Client does **not** auto-refresh access tokens; user can refresh from toolbar.
+- Browser enforces session expiry by clearing local auth state and redirecting to `/login` when access token expires.
 
 ### 4. Todo Command/Event CQRS Workflow
 ```mermaid

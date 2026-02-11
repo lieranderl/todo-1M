@@ -4,6 +4,7 @@
     --bg-2: #15213f;
     --line: rgba(148, 163, 184, 0.22);
     --text-soft: #94a3b8;
+    --group-action-col: 6.5rem;
 }
 
 * {
@@ -403,9 +404,66 @@ body {
     min-width: 0;
 }
 
+.group-create-row,
+.todo-create-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    align-items: stretch;
+    width: 100%;
+}
+
+.group-create-input,
+.todo-create-input {
+    min-width: 0;
+}
+
+.group-create-btn,
+.todo-create-btn {
+    min-width: 6.5rem;
+    height: 2.9rem;
+}
+
+.group-list {
+    display: grid;
+    gap: 0.4rem;
+}
+
+.group-list > li {
+    margin: 0;
+}
+
+.group-list > li > .group-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--group-action-col) var(
+            --group-action-col
+        );
+    gap: 0.45rem;
+    align-items: center;
+    width: 100%;
+}
+
+.group-name-btn {
+    min-height: 2.6rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.group-action-btn {
+    width: 100%;
+    min-width: 0;
+}
+
+.group-action-spacer {
+    display: block;
+    width: 100%;
+    min-height: 2.35rem;
+}
+
 .members-role-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr) minmax(7.5rem, 9rem) auto;
     gap: 0.5rem;
     align-items: stretch;
     width: 100%;
@@ -418,6 +476,37 @@ body {
 
 .members-role-btn {
     white-space: nowrap;
+    min-width: 5.75rem;
+    height: 2.9rem;
+}
+
+.todo-card {
+    border-radius: 0.9rem;
+}
+
+.todo-card-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(17rem, 26rem);
+    gap: 0.75rem;
+    align-items: start;
+    width: 100%;
+}
+
+.todo-item-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 0.45rem;
+    align-items: center;
+    width: 100%;
+}
+
+.todo-edit-input {
+    min-width: 0;
+}
+
+.todo-edit-btn {
+    min-width: 4.8rem;
+    height: 2.15rem;
 }
 
 .overview-grid {
@@ -535,12 +624,26 @@ body {
 }
 
 @media (max-width: 560px) {
+    .group-create-row,
+    .todo-create-row,
+    .group-row,
+    .todo-card-head,
+    .todo-item-actions,
     .members-role-row {
         grid-template-columns: 1fr;
     }
 
+    .group-action-btn,
+    .group-create-btn,
+    .todo-create-btn,
+    .todo-edit-btn,
     .members-role-select,
     .members-role-btn {
         width: 100%;
+    }
+
+    .group-action-spacer {
+        display: none;
+        min-height: 0;
     }
 }

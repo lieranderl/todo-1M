@@ -42,7 +42,7 @@ func AppHead(title string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><link href=\"https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css\" rel=\"stylesheet\" type=\"text/css\"><link rel=\"preconnect\" href=\"https://fonts.googleapis.com\"><link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin=\"anonymous\"><link href=\"https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap\" rel=\"stylesheet\"><link href=\"https://fonts.googleapis.com/icon?family=Material+Icons\" rel=\"stylesheet\"><link href=\"/static/app.css\" rel=\"stylesheet\"><script type=\"module\" src=\"https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-RC.7/bundles/datastar.js\"></script></head>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><link href=\"https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css\" rel=\"stylesheet\" type=\"text/css\"><link rel=\"preconnect\" href=\"https://fonts.googleapis.com\"><link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin=\"anonymous\"><link href=\"https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap\" rel=\"stylesheet\"><link href=\"https://fonts.googleapis.com/icon?family=Material+Icons\" rel=\"stylesheet\"><link href=\"/static/app.css\" rel=\"stylesheet\"><script type=\"module\" src=\"https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-RC.7/bundles/datastar.js\"></script><script>\n\t\t\t\t(() => {\n\t\t\t\t\tconst protectedPaths = new Set([\"/app\", \"/architecture\", \"/settings\"]);\n\t\t\t\t\tconst warnBeforeExpirySeconds = 60;\n\t\t\t\t\tconst checkIntervalMs = 15000;\n\n\t\t\t\tconst clearAuthStorage = () => {\n\t\t\t\t\tlocalStorage.removeItem(\"todo_access_token\");\n\t\t\t\t\tlocalStorage.removeItem(\"todo_refresh_token\");\n\t\t\t\t\tlocalStorage.removeItem(\"todo_username\");\n\t\t\t\t\tlocalStorage.removeItem(\"todo_user_id\");\n\t\t\t\t\tlocalStorage.removeItem(\"todo_active_group\");\n\t\t\t\t};\n\n\t\t\t\tconst parseTokenPayload = (token) => {\n\t\t\t\t\tconst parts = token.split(\".\");\n\t\t\t\t\tif (parts.length !== 3) {\n\t\t\t\t\t\treturn null;\n\t\t\t\t\t}\n\t\t\t\t\ttry {\n\t\t\t\t\t\tconst base64 = parts[1].replace(/-/g, \"+\").replace(/_/g, \"/\");\n\t\t\t\t\t\tconst normalized = base64 + \"=\".repeat((4 - (base64.length % 4)) % 4);\n\t\t\t\t\t\tconst decoded = atob(normalized);\n\t\t\t\t\t\treturn JSON.parse(decoded);\n\t\t\t\t\t} catch (_err) {\n\t\t\t\t\t\treturn null;\n\t\t\t\t\t}\n\t\t\t\t};\n\n\t\t\t\tconst formatRemaining = (seconds) => {\n\t\t\t\t\tconst mins = Math.floor(seconds / 60);\n\t\t\t\t\tconst secs = seconds % 60;\n\t\t\t\t\tconst pad = (n) => (n < 10 ? \"0\" + n : \"\" + n);\n\t\t\t\t\treturn `${mins}:${pad(secs)}`;\n\t\t\t\t};\n\n\t\t\t\t\tconst setNotice = (message) => {\n\t\t\t\t\t\tconst el = document.getElementById(\"session-notice\");\n\t\t\t\t\t\tif (!el) {\n\t\t\t\t\t\t\treturn;\n\t\t\t\t\t\t}\n\t\t\t\t\t\tconst text = String(message || \"\").trim();\n\t\t\t\t\t\tif (text === \"\") {\n\t\t\t\t\t\t\thideNotice();\n\t\t\t\t\t\t\treturn;\n\t\t\t\t\t\t}\n\t\t\t\t\t\tel.textContent = text;\n\t\t\t\t\t\tel.hidden = false;\n\t\t\t\t\t\tel.style.display = \"\";\n\t\t\t\t\t\tel.setAttribute(\"aria-hidden\", \"false\");\n\t\t\t\t\t};\n\n\t\t\t\t\tconst hideNotice = () => {\n\t\t\t\t\t\tconst el = document.getElementById(\"session-notice\");\n\t\t\t\t\t\tif (!el) {\n\t\t\t\t\t\t\treturn;\n\t\t\t\t\t\t}\n\t\t\t\t\t\tel.textContent = \"\";\n\t\t\t\t\t\tel.hidden = true;\n\t\t\t\t\t\tel.style.display = \"none\";\n\t\t\t\t\t\tel.setAttribute(\"aria-hidden\", \"true\");\n\t\t\t\t\t};\n\n\t\t\t\tconst redirectToLoginIfProtected = () => {\n\t\t\t\t\tif (!protectedPaths.has(window.location.pathname)) {\n\t\t\t\t\t\treturn;\n\t\t\t\t\t}\n\t\t\t\t\twindow.location.assign(\"/login\");\n\t\t\t\t};\n\n\t\t\t\tconst evaluateSession = () => {\n\t\t\t\t\tconst token = localStorage.getItem(\"todo_access_token\") || \"\";\n\t\t\t\t\tif (token === \"\") {\n\t\t\t\t\t\thideNotice();\n\t\t\t\t\t\treturn;\n\t\t\t\t\t}\n\n\t\t\t\t\tconst payload = parseTokenPayload(token);\n\t\t\t\t\tif (!payload || typeof payload.exp !== \"number\") {\n\t\t\t\t\t\tclearAuthStorage();\n\t\t\t\t\t\tredirectToLoginIfProtected();\n\t\t\t\t\t\treturn;\n\t\t\t\t\t}\n\n\t\t\t\t\tconst nowSeconds = Math.floor(Date.now() / 1000);\n\t\t\t\t\tconst remaining = payload.exp - nowSeconds;\n\n\t\t\t\t\tif (remaining <= 0) {\n\t\t\t\t\t\tclearAuthStorage();\n\t\t\t\t\t\tredirectToLoginIfProtected();\n\t\t\t\t\t\treturn;\n\t\t\t\t\t}\n\n\t\t\t\t\tif (remaining <= warnBeforeExpirySeconds) {\n\t\t\t\t\t\tsetNotice(\"Session expires in \" + formatRemaining(remaining) + \". Click Refresh Token in /app or log in again.\");\n\t\t\t\t\t\treturn;\n\t\t\t\t\t}\n\n\t\t\t\t\thideNotice();\n\t\t\t\t};\n\n\t\t\t\t\tconst tick = () => {\n\t\t\t\t\t\ttry {\n\t\t\t\t\t\t\tevaluateSession();\n\t\t\t\t\t\t} catch (_err) {\n\t\t\t\t\t\t}\n\t\t\t\t\t};\n\n\t\t\t\t\twindow.__todoSessionTick = tick;\n\t\t\t\t\ttick();\n\t\t\t\t\twindow.addEventListener(\"storage\", tick);\n\t\t\t\t\twindow.addEventListener(\"todo-auth-updated\", tick);\n\t\t\t\t\twindow.addEventListener(\"DOMContentLoaded\", () => {\n\t\t\t\t\t\ttick();\n\t\t\t\t\t\twindow.setInterval(tick, checkIntervalMs);\n\t\t\t\t\t});\n\t\t\t\t})();\n\t\t</script></head>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -78,7 +78,7 @@ func AuthGuard(message string) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(message)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 22, Col: 44}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 140, Col: 44}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -125,7 +125,7 @@ func SideNavItem(href string, label string, icon string, active bool) templ.Comp
 		var templ_7745c5c3_Var7 templ.SafeURL
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinURLErrs(href)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 29, Col: 13}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 147, Col: 13}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -151,7 +151,7 @@ func SideNavItem(href string, label string, icon string, active bool) templ.Comp
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(icon)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 32, Col: 49}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 150, Col: 49}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -164,7 +164,7 @@ func SideNavItem(href string, label string, icon string, active bool) templ.Comp
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 33, Col: 15}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 151, Col: 15}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -269,7 +269,7 @@ func WorkspaceMetric(title string, value string, subtitle string, icon string, t
 		var templ_7745c5c3_Var15 string
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 65, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 183, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {
@@ -282,7 +282,7 @@ func WorkspaceMetric(title string, value string, subtitle string, icon string, t
 		var templ_7745c5c3_Var16 string
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(icon)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 66, Col: 78}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 184, Col: 78}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
@@ -295,7 +295,7 @@ func WorkspaceMetric(title string, value string, subtitle string, icon string, t
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 68, Col: 38}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 186, Col: 38}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
@@ -308,7 +308,7 @@ func WorkspaceMetric(title string, value string, subtitle string, icon string, t
 		var templ_7745c5c3_Var18 string
 		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(subtitle)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 69, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 187, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {
@@ -372,7 +372,7 @@ func LoginFeatureCard(kicker string, title string, subtitle string, kickerClass 
 		var templ_7745c5c3_Var22 string
 		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(kicker)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 75, Col: 94}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 193, Col: 94}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {
@@ -385,7 +385,7 @@ func LoginFeatureCard(kicker string, title string, subtitle string, kickerClass 
 		var templ_7745c5c3_Var23 string
 		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 76, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 194, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 		if templ_7745c5c3_Err != nil {
@@ -398,7 +398,7 @@ func LoginFeatureCard(kicker string, title string, subtitle string, kickerClass 
 		var templ_7745c5c3_Var24 string
 		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(subtitle)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 77, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 195, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 		if templ_7745c5c3_Err != nil {
@@ -433,7 +433,7 @@ func PersistAuthEffects() templ.Component {
 			templ_7745c5c3_Var25 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<div data-effect=\"$access_token && localStorage.setItem('todo_access_token', $access_token)\"></div><div data-effect=\"$refresh_token && localStorage.setItem('todo_refresh_token', $refresh_token)\"></div><div data-effect=\"$username && localStorage.setItem('todo_username', $username)\"></div><div data-effect=\"$user_id && localStorage.setItem('todo_user_id', $user_id)\"></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<div data-effect=\"$access_token && (localStorage.setItem('todo_access_token', $access_token), window.dispatchEvent(new Event('todo-auth-updated')))\"></div><div data-effect=\"$refresh_token && (localStorage.setItem('todo_refresh_token', $refresh_token), window.dispatchEvent(new Event('todo-auth-updated')))\"></div><div data-effect=\"$username && localStorage.setItem('todo_username', $username)\"></div><div data-effect=\"$user_id && localStorage.setItem('todo_user_id', $user_id)\"></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -469,7 +469,7 @@ func LogoutButton(buttonID string) templ.Component {
 		var templ_7745c5c3_Var27 string
 		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(buttonID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 90, Col: 15}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 208, Col: 15}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 		if templ_7745c5c3_Err != nil {
@@ -573,7 +573,7 @@ func WorkspacePage() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<body class=\"min-h-screen\" data-signals=\"{api_base: window.location.origin.replace(':8081', ':8080').replace(':18081', ':18080'), access_token: localStorage.getItem('todo_access_token') || '', refresh_token: localStorage.getItem('todo_refresh_token') || '', username: localStorage.getItem('todo_username') || '', user_id: localStorage.getItem('todo_user_id') || '', active_group_id: localStorage.getItem('todo_active_group') || '', active_group_role: '', show_feed: localStorage.getItem('todo_show_feed') == null ? true : localStorage.getItem('todo_show_feed') === '1', workspace_bootstrapped: false, group_name: '', member_username: '', member_role: 'member', role_username: '', role_value: 'member', todo_message: ''}\"><div data-show=\"!$access_token\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<body class=\"min-h-screen\" data-signals=\"{api_base: window.location.origin.replace(':8081', ':8080').replace(':18081', ':18080'), access_token: localStorage.getItem('todo_access_token') || '', refresh_token: localStorage.getItem('todo_refresh_token') || '', username: localStorage.getItem('todo_username') || '', user_id: localStorage.getItem('todo_user_id') || '', active_group_id: localStorage.getItem('todo_active_group') || '', active_group_role: '', show_feed: localStorage.getItem('todo_show_feed') == null ? true : localStorage.getItem('todo_show_feed') === '1', workspace_bootstrapped: false, groups_dirty: false, group_name: '', member_username: '', member_role: 'member', role_username: '', role_value: 'member', todo_message: ''}\"><div data-show=\"!$access_token\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -589,7 +589,7 @@ func WorkspacePage() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<div data-effect=\"localStorage.setItem('todo_show_feed', $show_feed ? '1' : '0')\"></div><div data-effect=\"$active_group_id ? localStorage.setItem('todo_active_group', $active_group_id) : localStorage.removeItem('todo_active_group')\"></div><div data-effect=\"$access_token && !$workspace_bootstrapped && (@get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}}), @setAll(true, {include: /^workspace_bootstrapped$/}))\"></div><div id=\"app-shell\" class=\"app-root\" data-show=\"$access_token\"><div class=\"app-layout\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<div data-effect=\"localStorage.setItem('todo_show_feed', $show_feed ? '1' : '0')\"></div><div data-effect=\"$active_group_id ? localStorage.setItem('todo_active_group', $active_group_id) : localStorage.removeItem('todo_active_group')\"></div><div data-effect=\"$access_token && !$workspace_bootstrapped && (@get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}}), @setAll(true, {include: /^workspace_bootstrapped$/}))\"></div><div data-effect=\"$groups_dirty && !$create_group_busy && !$delete_group_busy && $access_token && (@get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}}), @setAll(false, {include: /^groups_dirty$/}))\"></div><div id=\"app-shell\" class=\"app-root\" data-show=\"$access_token\"><div class=\"app-layout\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -605,7 +605,7 @@ func WorkspacePage() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</div></header><main class=\"app-content\"><div class=\"status-card\"><div class=\"flex items-center justify-between gap-3 flex-wrap\"><p id=\"auth-status\" class=\"text-sm font-semibold text-info\" data-text=\"'Logged in as ' + ($username || 'user')\"></p><label class=\"label cursor-pointer gap-3 p-0\"><span class=\"label-text text-sm text-base-content/80\">Show Realtime Feed</span> <input id=\"feed-visible-toggle\" type=\"checkbox\" class=\"toggle toggle-info\" data-bind:show_feed></label></div></div><section class=\"stats-grid\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</div></header><main class=\"app-content\"><div id=\"session-notice\" class=\"alert alert-warning text-sm\" hidden aria-hidden=\"true\"></div><div class=\"status-card\"><div class=\"flex items-center justify-between gap-3 flex-wrap\"><p id=\"auth-status\" class=\"text-sm font-semibold text-info\" data-text=\"'Logged in as ' + ($username || 'user')\"></p><label class=\"label cursor-pointer gap-3 p-0\"><span class=\"label-text text-sm text-base-content/80\">Show Realtime Feed</span> <input id=\"feed-visible-toggle\" type=\"checkbox\" class=\"toggle toggle-info\" data-bind:show_feed></label></div></div><section class=\"stats-grid\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -621,7 +621,7 @@ func WorkspacePage() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</section><section class=\"workspace-grid\"><aside class=\"workspace-side space-y-5\"><div class=\"panel-card\"><div class=\"panel-header\"><h2 class=\"panel-title\">Groups</h2><p class=\"panel-sub\">Create and switch active collaboration groups.</p></div><label class=\"form-control\"><div class=\"label pb-1\"><span class=\"label-text text-xs uppercase tracking-widest\">Create Group</span></div><div class=\"join w-full\"><input id=\"group-name\" class=\"input input-bordered join-item w-full\" type=\"text\" placeholder=\"New group name\" data-bind:group_name data-on:keydown=\"event.key === 'Enter' && @post($api_base + '/api/v1/groups', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {name: $group_name}, filterSignals: {include: /^$/}})\"> <button id=\"create-group-btn\" class=\"btn btn-primary join-item\" data-indicator:create_group_busy data-attr:disabled=\"$create_group_busy\" data-on:click=\"@post($api_base + '/api/v1/groups', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {name: $group_name}, filterSignals: {include: /^$/}}); @setAll($id, {include: /^active_group_id$/}); @setAll('', {include: /^group_name$/}); @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}}); @get('/events?group_id=' + $active_group_id + '&token=' + $access_token, {openWhenHidden: true, filterSignals: {include: /^$/}})\">Create</button></div></label> <label class=\"form-control\"><div class=\"label pb-1\"><span class=\"label-text text-xs uppercase tracking-widest\">Connect Group</span></div><div class=\"join w-full\"><input id=\"active-group\" class=\"input input-bordered join-item w-full\" type=\"text\" placeholder=\"Active group id\" data-bind:active_group_id data-on:keydown=\"event.key === 'Enter' && @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})\"> <button id=\"connect-group-btn\" class=\"btn btn-secondary join-item\" data-indicator:connect_group_busy data-attr:disabled=\"$connect_group_busy\" data-on:click=\"$active_group_id && @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}}); $active_group_id && @get('/events?group_id=' + $active_group_id + '&token=' + $access_token, {openWhenHidden: true, filterSignals: {include: /^$/}})\">Connect</button></div></label><ul id=\"groups-list\" class=\"menu bg-base-200/60 rounded-box border border-base-300/40 p-2 max-h-64 overflow-auto\"><li class=\"text-sm text-base-content/60 px-3 py-2\">Loading groups...</li></ul></div><div class=\"panel-card\"><div class=\"panel-header\"><h2 class=\"panel-title\">Members & Roles</h2><p class=\"panel-sub\">Role-based management in active group.</p></div><div class=\"members-role-row\"><input id=\"member-username\" class=\"input input-bordered min-w-0\" type=\"text\" placeholder=\"Username\" data-bind:member_username data-on:keydown=\"event.key === 'Enter' && $active_group_id && @post($api_base + '/api/v1/groups/' + $active_group_id + '/members', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {username: $member_username, role: $member_role}, filterSignals: {include: /^$/}})\"> <select id=\"member-role\" class=\"select select-bordered members-role-select\" data-bind:member_role><option value=\"member\">member</option> <option value=\"admin\">admin</option></select> <button id=\"add-member-btn\" class=\"btn members-role-btn\" data-indicator:add_member_busy data-attr:disabled=\"$add_member_busy\" data-on:click=\"$active_group_id && @post($api_base + '/api/v1/groups/' + $active_group_id + '/members', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {username: $member_username, role: $member_role}, filterSignals: {include: /^$/}}); @setAll('', {include: /^member_username$/}); $active_group_id && @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})\">Add</button></div><div class=\"members-role-row mt-3\"><input id=\"role-username\" class=\"input input-bordered min-w-0\" type=\"text\" placeholder=\"Username to update role\" data-bind:role_username data-on:keydown=\"event.key === 'Enter' && $active_group_id && @patch($api_base + '/api/v1/groups/' + $active_group_id + '/members/role', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {username: $role_username, role: $role_value}, filterSignals: {include: /^$/}})\"> <select id=\"role-value\" class=\"select select-bordered members-role-select\" data-bind:role_value><option value=\"member\">member</option> <option value=\"admin\">admin</option></select> <button id=\"update-role-btn\" class=\"btn members-role-btn\" data-indicator:update_role_busy data-attr:disabled=\"$update_role_busy\" data-on:click=\"$active_group_id && @patch($api_base + '/api/v1/groups/' + $active_group_id + '/members/role', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {username: $role_username, role: $role_value}, filterSignals: {include: /^$/}}); @setAll('', {include: /^role_username$/}); $active_group_id && @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})\">Update</button></div></div></aside><section class=\"workspace-main space-y-5\"><div class=\"panel-card\"><div class=\"panel-header\"><h2 class=\"panel-title\">Todo Board</h2><p class=\"panel-sub\">Live group todo stream with author attribution and RBAC edits.</p></div><div class=\"join w-full mb-3\"><input id=\"todo-input\" class=\"input input-bordered join-item w-full\" type=\"text\" placeholder=\"Write a todo message...\" data-bind:todo_message data-on:keydown=\"event.key === 'Enter' && $active_group_id && @post($api_base + '/api/v1/command', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {action: 'create-todo', title: $todo_message, group_id: $active_group_id, todo_id: ''}, filterSignals: {include: /^$/}})\"> <button id=\"send-btn\" class=\"btn btn-primary join-item\" data-indicator:create_todo_busy data-attr:disabled=\"$create_todo_busy\" data-on:click=\"$active_group_id && @post($api_base + '/api/v1/command', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {action: 'create-todo', title: $todo_message, group_id: $active_group_id, todo_id: ''}, filterSignals: {include: /^$/}}); @setAll('', {include: /^todo_message$/})\">Add</button></div><div id=\"todos\" class=\"space-y-3\"><div class=\"text-sm text-base-content/60 px-2 py-3\">Select or connect a group to view todos.</div></div></div><div id=\"feed-card\" class=\"panel-card\" data-show=\"$show_feed\"><div class=\"panel-header\"><h2 class=\"panel-title\">Realtime Feed</h2><p class=\"panel-sub\">SSE stream rendered with Datastar patches.</p></div><div id=\"events\" class=\"space-y-3 max-h-[24rem] overflow-auto pr-1\"><span class=\"loading loading-spinner loading-lg text-info\"></span></div></div></section></section></main></div></div></div></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</section><section class=\"workspace-grid\"><aside class=\"workspace-side space-y-5\"><div class=\"panel-card\"><div class=\"panel-header\"><h2 class=\"panel-title\">Groups</h2><p class=\"panel-sub\">Create and switch active collaboration groups.</p></div><label class=\"form-control\"><div class=\"label pb-1\"><span class=\"label-text text-xs uppercase tracking-widest\">Create Group</span></div><div class=\"group-create-row\"><input id=\"group-name\" class=\"input input-bordered group-create-input\" type=\"text\" placeholder=\"New group name\" data-bind:group_name data-on:keydown=\"event.key === 'Enter' && @setAll(true, {include: /^groups_dirty$/}); event.key === 'Enter' && @post($api_base + '/api/v1/groups', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {name: $group_name}, filterSignals: {include: /^$/}}); event.key === 'Enter' && @setAll('', {include: /^group_name$/})\"> <button id=\"create-group-btn\" class=\"btn btn-primary group-create-btn\" data-indicator:create_group_busy data-attr:disabled=\"$create_group_busy\" data-on:click=\"@setAll(true, {include: /^groups_dirty$/}); @post($api_base + '/api/v1/groups', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {name: $group_name}, filterSignals: {include: /^$/}}); @setAll('', {include: /^group_name$/})\">Create</button></div></label><ul id=\"groups-list\" class=\"menu group-list bg-base-200/60 rounded-box border border-base-300/40 p-2 max-h-64 overflow-auto\"><li class=\"text-sm text-base-content/60 px-3 py-2\">Loading groups...</li></ul></div><div class=\"panel-card\"><div class=\"panel-header\"><h2 class=\"panel-title\">Members & Roles</h2><p class=\"panel-sub\">Role-based management in active group.</p></div><div class=\"members-role-row\"><input id=\"member-username\" class=\"input input-bordered min-w-0\" type=\"text\" placeholder=\"Username\" data-bind:member_username data-on:keydown=\"event.key === 'Enter' && $active_group_id && @post($api_base + '/api/v1/groups/' + $active_group_id + '/members', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {username: $member_username, role: $member_role}, filterSignals: {include: /^$/}})\"> <select id=\"member-role\" class=\"select select-bordered members-role-select\" data-bind:member_role><option value=\"member\">member</option> <option value=\"admin\">admin</option></select> <button id=\"add-member-btn\" class=\"btn members-role-btn\" data-indicator:add_member_busy data-attr:disabled=\"$add_member_busy\" data-on:click=\"$active_group_id && @post($api_base + '/api/v1/groups/' + $active_group_id + '/members', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {username: $member_username, role: $member_role}, filterSignals: {include: /^$/}}); @setAll('', {include: /^member_username$/}); $active_group_id && @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})\">Add</button></div><div class=\"members-role-row mt-3\"><input id=\"role-username\" class=\"input input-bordered min-w-0\" type=\"text\" placeholder=\"Username to update role\" data-bind:role_username data-on:keydown=\"event.key === 'Enter' && $active_group_id && @patch($api_base + '/api/v1/groups/' + $active_group_id + '/members/role', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {username: $role_username, role: $role_value}, filterSignals: {include: /^$/}})\"> <select id=\"role-value\" class=\"select select-bordered members-role-select\" data-bind:role_value><option value=\"member\">member</option> <option value=\"admin\">admin</option></select> <button id=\"update-role-btn\" class=\"btn members-role-btn\" data-indicator:update_role_busy data-attr:disabled=\"$update_role_busy\" data-on:click=\"$active_group_id && @patch($api_base + '/api/v1/groups/' + $active_group_id + '/members/role', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {username: $role_username, role: $role_value}, filterSignals: {include: /^$/}}); @setAll('', {include: /^role_username$/}); $active_group_id && @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})\">Update</button></div></div></aside><section class=\"workspace-main space-y-5\"><div class=\"panel-card\"><div class=\"panel-header\"><h2 class=\"panel-title\">Todo Board</h2><p class=\"panel-sub\">Live group todo stream with author attribution and RBAC edits.</p></div><div class=\"todo-create-row mb-3\"><input id=\"todo-input\" class=\"input input-bordered todo-create-input\" type=\"text\" placeholder=\"Write a todo message...\" data-bind:todo_message data-on:keydown=\"event.key === 'Enter' && $active_group_id && @post($api_base + '/api/v1/command', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {action: 'create-todo', title: $todo_message, group_id: $active_group_id, todo_id: ''}, filterSignals: {include: /^$/}}); event.key === 'Enter' && $active_group_id && @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})\"> <button id=\"send-btn\" class=\"btn btn-primary todo-create-btn\" data-indicator:create_todo_busy data-attr:disabled=\"$create_todo_busy\" data-on:click=\"$active_group_id && @post($api_base + '/api/v1/command', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {action: 'create-todo', title: $todo_message, group_id: $active_group_id, todo_id: ''}, filterSignals: {include: /^$/}}); $active_group_id && @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}}); @setAll('', {include: /^todo_message$/})\">Add</button></div><div id=\"todos\" class=\"space-y-3\"><div class=\"text-sm text-base-content/60 px-2 py-3\">Select or connect a group to view todos.</div></div></div><div id=\"feed-card\" class=\"panel-card\" data-show=\"$show_feed\"><div class=\"panel-header\"><h2 class=\"panel-title\">Realtime Feed</h2><p class=\"panel-sub\">SSE stream rendered with Datastar patches.</p></div><div id=\"events\" class=\"space-y-3 max-h-[24rem] overflow-auto pr-1\"><span class=\"loading loading-spinner loading-lg text-info\"></span></div></div></section></section></main></div></div></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -675,7 +675,7 @@ func ArchitectureServiceCard(title string, subtitle string, icon string, tone st
 		var templ_7745c5c3_Var33 string
 		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(icon)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 297, Col: 77}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 410, Col: 77}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 		if templ_7745c5c3_Err != nil {
@@ -688,7 +688,7 @@ func ArchitectureServiceCard(title string, subtitle string, icon string, tone st
 		var templ_7745c5c3_Var34 string
 		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 298, Col: 37}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 411, Col: 37}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 		if templ_7745c5c3_Err != nil {
@@ -701,7 +701,7 @@ func ArchitectureServiceCard(title string, subtitle string, icon string, tone st
 		var templ_7745c5c3_Var35 string
 		templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(subtitle)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 300, Col: 36}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 413, Col: 36}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 		if templ_7745c5c3_Err != nil {
@@ -776,7 +776,7 @@ func ArchitecturePage() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "</div></header><main class=\"app-content space-y-5\"><section class=\"stats-grid\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "</div></header><main class=\"app-content space-y-5\"><div id=\"session-notice\" class=\"alert alert-warning text-sm\" hidden aria-hidden=\"true\"></div><section class=\"stats-grid\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -881,7 +881,7 @@ func SettingsPage() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "</div></header><main class=\"app-content space-y-5\"><section class=\"panel-card\"><div class=\"panel-header\"><h2 class=\"panel-title\">Role Definitions</h2><p class=\"panel-sub\">Current production permission model used by command handlers.</p></div><div class=\"grid md:grid-cols-3 gap-3\"><div class=\"role-def role-owner\"><div class=\"font-bold\">Owner</div><p>Full workspace control including member role management.</p></div><div class=\"role-def role-admin\"><div class=\"font-bold\">Admin</div><p>Can add/edit/delete todos and manage members.</p></div><div class=\"role-def role-member\"><div class=\"font-bold\">Member</div><p>Can read and create todos, edit own items only.</p></div></div></section><section class=\"panel-card\"><div class=\"panel-header\"><h2 class=\"panel-title\">Operational Notes</h2><p class=\"panel-sub\">Local deployment behavior and runtime expectations.</p></div><ul class=\"list-disc pl-5 text-sm text-base-content/70 space-y-2\"><li>Group data isolation is enforced in both query endpoints and command actions.</li><li>UI updates are eventual-consistent and projection-gated by event sequence offset.</li><li>Token refresh and logout are handled in browser state with secure API endpoints.</li><li>Use the Workspace page for all live member and todo management actions.</li></ul></section></main></div></div></div></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "</div></header><main class=\"app-content space-y-5\"><div id=\"session-notice\" class=\"alert alert-warning text-sm\" hidden aria-hidden=\"true\"></div><section class=\"panel-card\"><div class=\"panel-header\"><h2 class=\"panel-title\">Role Definitions</h2><p class=\"panel-sub\">Current production permission model used by command handlers.</p></div><div class=\"grid md:grid-cols-3 gap-3\"><div class=\"role-def role-owner\"><div class=\"font-bold\">Owner</div><p>Full workspace control including member role management.</p></div><div class=\"role-def role-admin\"><div class=\"font-bold\">Admin</div><p>Can add/edit/delete todos and manage members.</p></div><div class=\"role-def role-member\"><div class=\"font-bold\">Member</div><p>Can read and create todos, edit own items only.</p></div></div></section><section class=\"panel-card\"><div class=\"panel-header\"><h2 class=\"panel-title\">Operational Notes</h2><p class=\"panel-sub\">Local deployment behavior and runtime expectations.</p></div><ul class=\"list-disc pl-5 text-sm text-base-content/70 space-y-2\"><li>Group data isolation is enforced in both query endpoints and command actions.</li><li>UI updates are eventual-consistent and projection-gated by event sequence offset.</li><li>Token refresh and logout are handled in browser state with secure API endpoints.</li><li>Use the Workspace page for all live member and todo management actions.</li></ul></section></main></div></div></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -917,7 +917,7 @@ func EventItem(msg string, subtitle string) templ.Component {
 		var templ_7745c5c3_Var39 string
 		templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 444, Col: 47}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 559, Col: 47}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 		if templ_7745c5c3_Err != nil {
@@ -930,7 +930,7 @@ func EventItem(msg string, subtitle string) templ.Component {
 		var templ_7745c5c3_Var40 string
 		templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(subtitle)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 445, Col: 48}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/frontend/components.templ`, Line: 560, Col: 48}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 		if templ_7745c5c3_Err != nil {

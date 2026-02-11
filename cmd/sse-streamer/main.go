@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/a-h/templ"
@@ -23,6 +24,8 @@ import (
 	"github.com/todo-1m/project/internal/platform/natsutil"
 	"github.com/todo-1m/project/services/frontend"
 )
+
+var userStreams = newUserStreamRegistry()
 
 func main() {
 	ctx := context.Background()
@@ -45,15 +48,12 @@ func main() {
 	queryRepo := query.NewTodoRepository(pool)
 
 	client, err := natsutil.ConnectJetStreamWithRetry(env.String("NATS_URL", env.DefaultNATSURL), 20*time.Second)
-	var nc *nats.Conn
-	var js nats.JetStreamContext
 	if err != nil {
-		log.Println("NATS not connected (running local?):", err)
-	} else {
-		defer client.Close()
-		nc = client.Conn
-		js = client.JS
+		log.Fatal(err)
 	}
+	defer client.Close()
+	nc := client.Conn
+	js := client.JS
 
 	mux := http.NewServeMux()
 	mux.Handle("/", templ.Handler(frontend.LoginPage()))
@@ -184,13 +184,20 @@ func main() {
 			http.Error(w, "invalid token", http.StatusUnauthorized)
 			return
 		}
+		streamCtx, cancelStream := context.WithCancel(r.Context())
+		streamID := fmt.Sprintf("%d", time.Now().UnixNano())
+		if cancelPrev := userStreams.Replace(claims.Subject, streamID, cancelStream); cancelPrev != nil {
+			cancelPrev()
+		}
+		defer userStreams.Release(claims.Subject, streamID)
+		defer cancelStream()
 
 		groupID := strings.TrimSpace(r.URL.Query().Get("group_id"))
 		if groupID == "" {
 			http.Error(w, "group_id is required", http.StatusBadRequest)
 			return
 		}
-		member, err := identityRepo.IsUserInGroup(r.Context(), claims.Subject, groupID)
+		member, err := identityRepo.IsUserInGroup(streamCtx, claims.Subject, groupID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -209,27 +216,28 @@ func main() {
 			flusher.Flush()
 		}
 
-		sendFragment := func(msg string, subtitle string) {
-			component := frontend.EventItem(msg, subtitle)
-			var buf bytes.Buffer
-			if err := component.Render(r.Context(), &buf); err != nil {
-				return
-			}
-			sendPatch("#events", "prepend", buf.String())
-		}
-
-		role, err := identityRepo.GetMembershipRole(r.Context(), claims.Subject, groupID)
+		role, err := identityRepo.GetMembershipRole(streamCtx, claims.Subject, groupID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		todoSelector := cssAttrSelector("todos", "data-group-id", groupID)
+		eventsSelector := cssAttrSelector("events", "data-group-id", groupID)
+		sendFragment := func(msg string, subtitle string) {
+			component := frontend.EventItem(msg, subtitle)
+			var buf bytes.Buffer
+			if err := component.Render(streamCtx, &buf); err != nil {
+				return
+			}
+			sendPatch(eventsSelector, "prepend", buf.String())
+		}
 		sendTodos := func(targetEventSeq uint64) {
-			waitForProjectionOffset(r.Context(), queryRepo, groupID, targetEventSeq, 2500*time.Millisecond)
-			todos, err := queryRepo.ListGroupTodos(r.Context(), groupID, 50)
+			waitForProjectionOffset(streamCtx, queryRepo, groupID, targetEventSeq, 2500*time.Millisecond)
+			todos, err := queryRepo.ListGroupTodos(streamCtx, groupID, 50)
 			if err != nil {
 				return
 			}
-			sendPatch("#todos", "outer", renderTodoList(todos, claims.Subject, role, groupID))
+			sendPatch(todoSelector, "outer", renderTodoList(todos, claims.Subject, role, groupID))
 		}
 
 		type streamEvent struct {
@@ -299,12 +307,14 @@ func main() {
 			}
 		}()
 
+		sendPatch("#todos", "outer", renderTodoList(nil, claims.Subject, role, groupID))
+		sendPatch("#events", "outer", renderEventsContainer(groupID))
 		sendFragment("Connected to Group Stream!", "Waiting for updates...")
 		sendTodos(0)
 
 		for {
 			select {
-			case <-r.Context().Done():
+			case <-streamCtx.Done():
 				return
 			case streamEvent := <-eventCh:
 				event := streamEvent.Event
@@ -328,6 +338,46 @@ func main() {
 
 	fmt.Printf("SSE Streamer listening on %s\n", streamerAddr)
 	log.Fatal(http.ListenAndServe(streamerAddr, mux))
+}
+
+type userStreamLease struct {
+	id     string
+	cancel context.CancelFunc
+}
+
+type userStreamRegistry struct {
+	mu     sync.Mutex
+	byUser map[string]userStreamLease
+}
+
+func newUserStreamRegistry() *userStreamRegistry {
+	return &userStreamRegistry{byUser: make(map[string]userStreamLease)}
+}
+
+func (r *userStreamRegistry) Replace(userID, streamID string, cancel context.CancelFunc) context.CancelFunc {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	var prevCancel context.CancelFunc
+	if current, ok := r.byUser[userID]; ok {
+		prevCancel = current.cancel
+	}
+	r.byUser[userID] = userStreamLease{id: streamID, cancel: cancel}
+	return prevCancel
+}
+
+func (r *userStreamRegistry) Release(userID, streamID string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	current, ok := r.byUser[userID]
+	if !ok {
+		return
+	}
+	if current.id != streamID {
+		return
+	}
+	delete(r.byUser, userID)
 }
 
 func waitForIdentitySchema(ctx context.Context, repo *identity.PostgresRepository, timeout time.Duration) error {
@@ -397,9 +447,15 @@ func groupEventSubject(groupID string) string {
 	return "app.event.*.group." + groupID
 }
 
+func cssAttrSelector(id, attr, value string) string {
+	escaped := strings.ReplaceAll(value, `\`, `\\`)
+	escaped = strings.ReplaceAll(escaped, `'`, `\'`)
+	return fmt.Sprintf("#%s[%s='%s']", id, attr, escaped)
+}
+
 func renderGroupsList(groups []identity.GroupMembership, activeGroupID string) string {
 	var sb strings.Builder
-	sb.WriteString(`<ul id="groups-list" class="menu bg-base-200/60 rounded-box border border-base-300/40 p-2 max-h-64 overflow-auto">`)
+	sb.WriteString(`<ul id="groups-list" class="menu group-list bg-base-200/60 rounded-box border border-base-300/40 p-2 max-h-64 overflow-auto">`)
 
 	if len(groups) == 0 {
 		sb.WriteString(`<li class="text-sm text-base-content/60 px-3 py-2">No groups yet. Create one to start collaborating.</li></ul>`)
@@ -409,7 +465,7 @@ func renderGroupsList(groups []identity.GroupMembership, activeGroupID string) s
 	for _, group := range groups {
 		name := strings.TrimSpace(group.GroupName)
 		if name == "" {
-			name = group.GroupID
+			name = "Untitled group"
 		}
 
 		buttonClass := "w-full text-left rounded-lg px-3 py-2 hover:bg-base-300/40 transition-colors"
@@ -417,23 +473,31 @@ func renderGroupsList(groups []identity.GroupMembership, activeGroupID string) s
 			buttonClass += " bg-base-300/50"
 		}
 
-		sb.WriteString(`<li><div class="flex items-center gap-2">`)
-		sb.WriteString(`<button class="`)
+		sb.WriteString(`<li><div class="group-row">`)
+		sb.WriteString(`<button class="group-name-btn `)
 		sb.WriteString(html.EscapeString(buttonClass))
 		sb.WriteString(`" data-group-id="`)
 		sb.WriteString(html.EscapeString(group.GroupID))
 		sb.WriteString(`" data-group-role="`)
 		sb.WriteString(html.EscapeString(group.Role))
-		sb.WriteString(`" data-on:click="@setAll(evt.currentTarget.dataset.groupId, {include: /^active_group_id$/}); @setAll(evt.currentTarget.dataset.groupRole, {include: /^active_group_role$/}); @get('/ui/workspace?group_id=' + evt.currentTarget.dataset.groupId, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}}); @get('/events?group_id=' + evt.currentTarget.dataset.groupId + '&token=' + $access_token, {openWhenHidden: true, filterSignals: {include: /^$/}})">`)
+		sb.WriteString(`" data-on:click="@setAll(evt.currentTarget.dataset.groupId, {include: /^active_group_id$/}); @setAll(evt.currentTarget.dataset.groupRole, {include: /^active_group_role$/}); @get('/ui/workspace?group_id=' + evt.currentTarget.dataset.groupId, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})">`)
 		sb.WriteString(html.EscapeString(name))
 		sb.WriteString(` [`)
 		sb.WriteString(html.EscapeString(group.Role))
 		sb.WriteString(`]</button>`)
 
+		sb.WriteString(`<button class="btn btn-sm btn-secondary btn-outline group-action-btn" data-group-id="`)
+		sb.WriteString(html.EscapeString(group.GroupID))
+		sb.WriteString(`" data-group-role="`)
+		sb.WriteString(html.EscapeString(group.Role))
+		sb.WriteString(`" data-on:click="@setAll(evt.currentTarget.dataset.groupId, {include: /^active_group_id$/}); @setAll(evt.currentTarget.dataset.groupRole, {include: /^active_group_role$/}); @get('/ui/workspace?group_id=' + evt.currentTarget.dataset.groupId, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}}); @get('/events?group_id=' + evt.currentTarget.dataset.groupId + '&token=' + $access_token, {openWhenHidden: true, filterSignals: {include: /^$/}})">Connect</button>`)
+
 		if group.Role == identity.RoleOwner {
-			sb.WriteString(`<button class="btn btn-xs btn-error btn-outline shrink-0" data-group-id="`)
+			sb.WriteString(`<button class="btn btn-sm btn-error btn-outline group-action-btn" data-indicator:delete_group_busy data-attr:disabled="$delete_group_busy" data-group-id="`)
 			sb.WriteString(html.EscapeString(group.GroupID))
-			sb.WriteString(`" data-on:click="evt.stopPropagation(); @setAll((evt.currentTarget.dataset.groupId === $active_group_id) ? '' : $active_group_id, {include: /^active_group_id$/}); @setAll((evt.currentTarget.dataset.groupId === $active_group_id) ? '' : $active_group_role, {include: /^active_group_role$/}); @delete($api_base + '/api/v1/groups/' + evt.currentTarget.dataset.groupId, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}}); @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})">Delete</button>`)
+			sb.WriteString(`" data-on:click="evt.stopPropagation(); @setAll(true, {include: /^groups_dirty$/}); @setAll((evt.currentTarget.dataset.groupId === $active_group_id) ? '' : $active_group_id, {include: /^active_group_id$/}); @setAll((evt.currentTarget.dataset.groupId === $active_group_id) ? '' : $active_group_role, {include: /^active_group_role$/}); @delete($api_base + '/api/v1/groups/' + evt.currentTarget.dataset.groupId, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})">Delete</button>`)
+		} else {
+			sb.WriteString(`<span class="group-action-spacer" aria-hidden="true"></span>`)
 		}
 		sb.WriteString(`</div></li>`)
 	}
@@ -444,7 +508,9 @@ func renderGroupsList(groups []identity.GroupMembership, activeGroupID string) s
 
 func renderTodoList(todos []query.TodoView, actorUserID, role, activeGroupID string) string {
 	var sb strings.Builder
-	sb.WriteString(`<div id="todos" class="space-y-3">`)
+	sb.WriteString(`<div id="todos" data-group-id="`)
+	sb.WriteString(html.EscapeString(strings.TrimSpace(activeGroupID)))
+	sb.WriteString(`" class="space-y-3">`)
 
 	if strings.TrimSpace(activeGroupID) == "" {
 		sb.WriteString(`<div class="text-sm text-base-content/60 px-2 py-3">Select or connect a group to view todos.</div></div>`)
@@ -466,8 +532,8 @@ func renderTodoList(todos []query.TodoView, actorUserID, role, activeGroupID str
 		canEdit := canModerate || todo.CreatedByUserID == actorUserID
 		inputID := "todo-edit-" + todo.TodoID
 
-		sb.WriteString(`<div class="card bg-base-100 border border-base-300/60 shadow"><div class="card-body p-4 gap-3">`)
-		sb.WriteString(`<div class="flex justify-between gap-2 items-start">`)
+		sb.WriteString(`<div class="card todo-card bg-base-100 border border-base-300/60 shadow"><div class="card-body p-4 gap-3">`)
+		sb.WriteString(`<div class="todo-card-head">`)
 		sb.WriteString(`<div><div class="font-semibold text-base-content text-base">`)
 		sb.WriteString(html.EscapeString(todo.Title))
 		sb.WriteString(`</div><div class="text-xs text-base-content/70 mt-1">`)
@@ -475,18 +541,18 @@ func renderTodoList(todos []query.TodoView, actorUserID, role, activeGroupID str
 		sb.WriteString(`</div></div>`)
 
 		if canEdit {
-			sb.WriteString(`<div class="join">`)
+			sb.WriteString(`<div class="todo-item-actions">`)
 			sb.WriteString(`<input id="`)
 			sb.WriteString(html.EscapeString(inputID))
-			sb.WriteString(`" class="input input-bordered input-sm join-item w-52" type="text" value="`)
+			sb.WriteString(`" class="input input-bordered input-sm todo-edit-input" type="text" value="`)
 			sb.WriteString(html.EscapeString(todo.Title))
 			sb.WriteString(`"/>`)
-			sb.WriteString(`<button class="btn btn-xs btn-outline join-item" data-todo-id="`)
+			sb.WriteString(`<button class="btn btn-sm btn-outline todo-edit-btn" data-todo-id="`)
 			sb.WriteString(html.EscapeString(todo.TodoID))
 			sb.WriteString(`" data-input-id="`)
 			sb.WriteString(html.EscapeString(inputID))
 			sb.WriteString(`" data-on:click="@post($api_base + '/api/v1/command', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {action: 'update-todo', title: document.getElementById(evt.currentTarget.dataset.inputId).value, group_id: $active_group_id, todo_id: evt.currentTarget.dataset.todoId}, filterSignals: {include: /^$/}}); @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})">Save</button>`)
-			sb.WriteString(`<button class="btn btn-xs btn-error btn-outline join-item" data-todo-id="`)
+			sb.WriteString(`<button class="btn btn-sm btn-error btn-outline todo-edit-btn" data-todo-id="`)
 			sb.WriteString(html.EscapeString(todo.TodoID))
 			sb.WriteString(`" data-on:click="@post($api_base + '/api/v1/command', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {action: 'delete-todo', title: '', group_id: $active_group_id, todo_id: evt.currentTarget.dataset.todoId}, filterSignals: {include: /^$/}}); @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})">Delete</button>`)
 			sb.WriteString(`</div>`)
@@ -494,14 +560,17 @@ func renderTodoList(todos []query.TodoView, actorUserID, role, activeGroupID str
 			sb.WriteString(`<span class="badge badge-ghost badge-sm">read-only</span>`)
 		}
 
-		sb.WriteString(`</div><div class="divider my-0"></div><div class="flex items-center justify-between text-[11px] text-base-content/60">`)
-		sb.WriteString(`<span class="badge badge-ghost badge-sm">group `)
-		sb.WriteString(html.EscapeString(todo.GroupID))
-		sb.WriteString(`</span><span>todo `)
-		sb.WriteString(html.EscapeString(todo.TodoID))
-		sb.WriteString(`</span></div></div></div>`)
+		sb.WriteString(`</div></div></div>`)
 	}
 
 	sb.WriteString(`</div>`)
+	return sb.String()
+}
+
+func renderEventsContainer(activeGroupID string) string {
+	var sb strings.Builder
+	sb.WriteString(`<div id="events" data-group-id="`)
+	sb.WriteString(html.EscapeString(strings.TrimSpace(activeGroupID)))
+	sb.WriteString(`" class="space-y-3 max-h-[24rem] overflow-auto pr-1"></div>`)
 	return sb.String()
 }

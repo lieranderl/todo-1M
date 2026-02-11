@@ -12,6 +12,124 @@ templ AppHead(title string) {
 		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
 		<link href="/static/app.css" rel="stylesheet"/>
 		<script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-RC.7/bundles/datastar.js"></script>
+			<script>
+				(() => {
+					const protectedPaths = new Set(["/app", "/architecture", "/settings"]);
+					const warnBeforeExpirySeconds = 60;
+					const checkIntervalMs = 15000;
+
+				const clearAuthStorage = () => {
+					localStorage.removeItem("todo_access_token");
+					localStorage.removeItem("todo_refresh_token");
+					localStorage.removeItem("todo_username");
+					localStorage.removeItem("todo_user_id");
+					localStorage.removeItem("todo_active_group");
+				};
+
+				const parseTokenPayload = (token) => {
+					const parts = token.split(".");
+					if (parts.length !== 3) {
+						return null;
+					}
+					try {
+						const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+						const normalized = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+						const decoded = atob(normalized);
+						return JSON.parse(decoded);
+					} catch (_err) {
+						return null;
+					}
+				};
+
+				const formatRemaining = (seconds) => {
+					const mins = Math.floor(seconds / 60);
+					const secs = seconds % 60;
+					const pad = (n) => (n < 10 ? "0" + n : "" + n);
+					return `${mins}:${pad(secs)}`;
+				};
+
+					const setNotice = (message) => {
+						const el = document.getElementById("session-notice");
+						if (!el) {
+							return;
+						}
+						const text = String(message || "").trim();
+						if (text === "") {
+							hideNotice();
+							return;
+						}
+						el.textContent = text;
+						el.hidden = false;
+						el.style.display = "";
+						el.setAttribute("aria-hidden", "false");
+					};
+
+					const hideNotice = () => {
+						const el = document.getElementById("session-notice");
+						if (!el) {
+							return;
+						}
+						el.textContent = "";
+						el.hidden = true;
+						el.style.display = "none";
+						el.setAttribute("aria-hidden", "true");
+					};
+
+				const redirectToLoginIfProtected = () => {
+					if (!protectedPaths.has(window.location.pathname)) {
+						return;
+					}
+					window.location.assign("/login");
+				};
+
+				const evaluateSession = () => {
+					const token = localStorage.getItem("todo_access_token") || "";
+					if (token === "") {
+						hideNotice();
+						return;
+					}
+
+					const payload = parseTokenPayload(token);
+					if (!payload || typeof payload.exp !== "number") {
+						clearAuthStorage();
+						redirectToLoginIfProtected();
+						return;
+					}
+
+					const nowSeconds = Math.floor(Date.now() / 1000);
+					const remaining = payload.exp - nowSeconds;
+
+					if (remaining <= 0) {
+						clearAuthStorage();
+						redirectToLoginIfProtected();
+						return;
+					}
+
+					if (remaining <= warnBeforeExpirySeconds) {
+						setNotice("Session expires in " + formatRemaining(remaining) + ". Click Refresh Token in /app or log in again.");
+						return;
+					}
+
+					hideNotice();
+				};
+
+					const tick = () => {
+						try {
+							evaluateSession();
+						} catch (_err) {
+						}
+					};
+
+					window.__todoSessionTick = tick;
+					tick();
+					window.addEventListener("storage", tick);
+					window.addEventListener("todo-auth-updated", tick);
+					window.addEventListener("DOMContentLoaded", () => {
+						tick();
+						window.setInterval(tick, checkIntervalMs);
+					});
+				})();
+		</script>
 	</head>
 }
 
@@ -79,8 +197,8 @@ templ LoginFeatureCard(kicker string, title string, subtitle string, kickerClass
 }
 
 templ PersistAuthEffects() {
-	<div data-effect="$access_token && localStorage.setItem('todo_access_token', $access_token)"></div>
-	<div data-effect="$refresh_token && localStorage.setItem('todo_refresh_token', $refresh_token)"></div>
+	<div data-effect="$access_token && (localStorage.setItem('todo_access_token', $access_token), window.dispatchEvent(new Event('todo-auth-updated')))"></div>
+	<div data-effect="$refresh_token && (localStorage.setItem('todo_refresh_token', $refresh_token), window.dispatchEvent(new Event('todo-auth-updated')))"></div>
 	<div data-effect="$username && localStorage.setItem('todo_username', $username)"></div>
 	<div data-effect="$user_id && localStorage.setItem('todo_user_id', $user_id)"></div>
 }
@@ -162,7 +280,7 @@ templ WorkspacePage() {
 		@AppHead("Todo-1M · Workspace")
 		<body
 			class="min-h-screen"
-			data-signals="{api_base: window.location.origin.replace(':8081', ':8080').replace(':18081', ':18080'), access_token: localStorage.getItem('todo_access_token') || '', refresh_token: localStorage.getItem('todo_refresh_token') || '', username: localStorage.getItem('todo_username') || '', user_id: localStorage.getItem('todo_user_id') || '', active_group_id: localStorage.getItem('todo_active_group') || '', active_group_role: '', show_feed: localStorage.getItem('todo_show_feed') == null ? true : localStorage.getItem('todo_show_feed') === '1', workspace_bootstrapped: false, group_name: '', member_username: '', member_role: 'member', role_username: '', role_value: 'member', todo_message: ''}"
+			data-signals="{api_base: window.location.origin.replace(':8081', ':8080').replace(':18081', ':18080'), access_token: localStorage.getItem('todo_access_token') || '', refresh_token: localStorage.getItem('todo_refresh_token') || '', username: localStorage.getItem('todo_username') || '', user_id: localStorage.getItem('todo_user_id') || '', active_group_id: localStorage.getItem('todo_active_group') || '', active_group_role: '', show_feed: localStorage.getItem('todo_show_feed') == null ? true : localStorage.getItem('todo_show_feed') === '1', workspace_bootstrapped: false, groups_dirty: false, group_name: '', member_username: '', member_role: 'member', role_username: '', role_value: 'member', todo_message: ''}"
 		>
 			<div data-show="!$access_token">
 				@AuthGuard("Checking session...")
@@ -172,6 +290,7 @@ templ WorkspacePage() {
 			<div data-effect="localStorage.setItem('todo_show_feed', $show_feed ? '1' : '0')"></div>
 			<div data-effect="$active_group_id ? localStorage.setItem('todo_active_group', $active_group_id) : localStorage.removeItem('todo_active_group')"></div>
 			<div data-effect="$access_token && !$workspace_bootstrapped && (@get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}}), @setAll(true, {include: /^workspace_bootstrapped$/}))"></div>
+			<div data-effect="$groups_dirty && !$create_group_busy && !$delete_group_busy && $access_token && (@get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}}), @setAll(false, {include: /^groups_dirty$/}))"></div>
 
 			<div id="app-shell" class="app-root" data-show="$access_token">
 				<div class="app-layout">
@@ -191,6 +310,7 @@ templ WorkspacePage() {
 						</header>
 
 						<main class="app-content">
+							<div id="session-notice" class="alert alert-warning text-sm" hidden aria-hidden="true"></div>
 							<div class="status-card">
 								<div class="flex items-center justify-between gap-3 flex-wrap">
 									<p id="auth-status" class="text-sm font-semibold text-info" data-text="'Logged in as ' + ($username || 'user')"></p>
@@ -214,23 +334,16 @@ templ WorkspacePage() {
 											<h2 class="panel-title">Groups</h2>
 											<p class="panel-sub">Create and switch active collaboration groups.</p>
 										</div>
-										<label class="form-control">
-											<div class="label pb-1"><span class="label-text text-xs uppercase tracking-widest">Create Group</span></div>
-											<div class="join w-full">
-												<input id="group-name" class="input input-bordered join-item w-full" type="text" placeholder="New group name" data-bind:group_name data-on:keydown="event.key === 'Enter' && @post($api_base + '/api/v1/groups', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {name: $group_name}, filterSignals: {include: /^$/}})"/>
-												<button id="create-group-btn" class="btn btn-primary join-item" data-indicator:create_group_busy data-attr:disabled="$create_group_busy" data-on:click="@post($api_base + '/api/v1/groups', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {name: $group_name}, filterSignals: {include: /^$/}}); @setAll($id, {include: /^active_group_id$/}); @setAll('', {include: /^group_name$/}); @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}}); @get('/events?group_id=' + $active_group_id + '&token=' + $access_token, {openWhenHidden: true, filterSignals: {include: /^$/}})">Create</button>
-											</div>
-										</label>
-										<label class="form-control">
-											<div class="label pb-1"><span class="label-text text-xs uppercase tracking-widest">Connect Group</span></div>
-											<div class="join w-full">
-												<input id="active-group" class="input input-bordered join-item w-full" type="text" placeholder="Active group id" data-bind:active_group_id data-on:keydown="event.key === 'Enter' && @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})"/>
-												<button id="connect-group-btn" class="btn btn-secondary join-item" data-indicator:connect_group_busy data-attr:disabled="$connect_group_busy" data-on:click="$active_group_id && @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}}); $active_group_id && @get('/events?group_id=' + $active_group_id + '&token=' + $access_token, {openWhenHidden: true, filterSignals: {include: /^$/}})">Connect</button>
-											</div>
-										</label>
-										<ul id="groups-list" class="menu bg-base-200/60 rounded-box border border-base-300/40 p-2 max-h-64 overflow-auto">
-											<li class="text-sm text-base-content/60 px-3 py-2">Loading groups...</li>
-										</ul>
+											<label class="form-control">
+												<div class="label pb-1"><span class="label-text text-xs uppercase tracking-widest">Create Group</span></div>
+												<div class="group-create-row">
+													<input id="group-name" class="input input-bordered group-create-input" type="text" placeholder="New group name" data-bind:group_name data-on:keydown="event.key === 'Enter' && @setAll(true, {include: /^groups_dirty$/}); event.key === 'Enter' && @post($api_base + '/api/v1/groups', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {name: $group_name}, filterSignals: {include: /^$/}}); event.key === 'Enter' && @setAll('', {include: /^group_name$/})"/>
+														<button id="create-group-btn" class="btn btn-primary group-create-btn" data-indicator:create_group_busy data-attr:disabled="$create_group_busy" data-on:click="@setAll(true, {include: /^groups_dirty$/}); @post($api_base + '/api/v1/groups', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {name: $group_name}, filterSignals: {include: /^$/}}); @setAll('', {include: /^group_name$/})">Create</button>
+													</div>
+												</label>
+												<ul id="groups-list" class="menu group-list bg-base-200/60 rounded-box border border-base-300/40 p-2 max-h-64 overflow-auto">
+													<li class="text-sm text-base-content/60 px-3 py-2">Loading groups...</li>
+												</ul>
 									</div>
 
 									<div class="panel-card">
@@ -263,9 +376,9 @@ templ WorkspacePage() {
 											<h2 class="panel-title">Todo Board</h2>
 											<p class="panel-sub">Live group todo stream with author attribution and RBAC edits.</p>
 										</div>
-										<div class="join w-full mb-3">
-												<input id="todo-input" class="input input-bordered join-item w-full" type="text" placeholder="Write a todo message..." data-bind:todo_message data-on:keydown="event.key === 'Enter' && $active_group_id && @post($api_base + '/api/v1/command', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {action: 'create-todo', title: $todo_message, group_id: $active_group_id, todo_id: ''}, filterSignals: {include: /^$/}})"/>
-												<button id="send-btn" class="btn btn-primary join-item" data-indicator:create_todo_busy data-attr:disabled="$create_todo_busy" data-on:click="$active_group_id && @post($api_base + '/api/v1/command', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {action: 'create-todo', title: $todo_message, group_id: $active_group_id, todo_id: ''}, filterSignals: {include: /^$/}}); @setAll('', {include: /^todo_message$/})">Add</button>
+										<div class="todo-create-row mb-3">
+												<input id="todo-input" class="input input-bordered todo-create-input" type="text" placeholder="Write a todo message..." data-bind:todo_message data-on:keydown="event.key === 'Enter' && $active_group_id && @post($api_base + '/api/v1/command', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {action: 'create-todo', title: $todo_message, group_id: $active_group_id, todo_id: ''}, filterSignals: {include: /^$/}}); event.key === 'Enter' && $active_group_id && @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}})"/>
+												<button id="send-btn" class="btn btn-primary todo-create-btn" data-indicator:create_todo_busy data-attr:disabled="$create_todo_busy" data-on:click="$active_group_id && @post($api_base + '/api/v1/command', {headers: {Authorization: 'Bearer ' + $access_token}, payload: {action: 'create-todo', title: $todo_message, group_id: $active_group_id, todo_id: ''}, filterSignals: {include: /^$/}}); $active_group_id && @get('/ui/workspace?group_id=' + $active_group_id, {headers: {Authorization: 'Bearer ' + $access_token}, filterSignals: {include: /^$/}}); @setAll('', {include: /^todo_message$/})">Add</button>
 										</div>
 										<div id="todos" class="space-y-3">
 											<div class="text-sm text-base-content/60 px-2 py-3">Select or connect a group to view todos.</div>
@@ -332,6 +445,7 @@ templ ArchitecturePage() {
 							</header>
 
 						<main class="app-content space-y-5">
+							<div id="session-notice" class="alert alert-warning text-sm" hidden aria-hidden="true"></div>
 							<section class="stats-grid">
 								@WorkspaceMetric("Groups", "Live", "Group-scoped read and write paths", "groups", "tone-primary")
 								@WorkspaceMetric("Users", "RBAC", "owner/admin/member enforcement", "admin_panel_settings", "tone-info")
@@ -397,6 +511,7 @@ templ SettingsPage() {
 							</header>
 
 						<main class="app-content space-y-5">
+							<div id="session-notice" class="alert alert-warning text-sm" hidden aria-hidden="true"></div>
 							<section class="panel-card">
 								<div class="panel-header">
 									<h2 class="panel-title">Role Definitions</h2>

@@ -219,6 +219,9 @@ func TestWorkspacePageBootstrapsWithOneShotEffect(t *testing.T) {
 	if !strings.Contains(page, "workspace_bootstrapped: false") {
 		t.Fatalf("workspace page missing workspace_bootstrapped signal")
 	}
+	if !strings.Contains(page, "groups_dirty: false") {
+		t.Fatalf("workspace page missing groups_dirty signal")
+	}
 	if !strings.Contains(page, `data-effect="$access_token && !$workspace_bootstrapped && (`) {
 		t.Fatalf("workspace page missing one-shot data-effect bootstrap for group loading")
 	}
@@ -227,6 +230,9 @@ func TestWorkspacePageBootstrapsWithOneShotEffect(t *testing.T) {
 	}
 	if !strings.Contains(page, `@setAll(true, {include: /^workspace_bootstrapped$/})`) {
 		t.Fatalf("workspace page bootstrap missing workspace_bootstrapped setAll")
+	}
+	if strings.Contains(page, `id="active-group"`) || strings.Contains(page, `id="connect-group-btn"`) {
+		t.Fatalf("workspace page should not include manual connect-by-id controls")
 	}
 	if !strings.Contains(page, `@get('/ui/workspace?group_id=' + $active_group_id`) ||
 		!strings.Contains(page, `@setAll(true, {include: /^workspace_bootstrapped$/})`) {
@@ -246,6 +252,9 @@ func TestWorkspacePageBootstrapsWithOneShotEffect(t *testing.T) {
 	}
 	if strings.Contains(page, `data-on:load="$access_token && @get('/ui/workspace?group_id=' + $active_group_id`) {
 		t.Fatalf("workspace page still uses data-on:load bootstrap instead of one-shot data-effect")
+	}
+	if !strings.Contains(page, `$groups_dirty && !$create_group_busy && !$delete_group_busy && $access_token && (@get('/ui/workspace?group_id=' + $active_group_id`) {
+		t.Fatalf("workspace page missing post-mutation groups refresh effect")
 	}
 }
 
@@ -267,6 +276,9 @@ func TestWorkspaceFragmentUsesGroupNamesAndSelectionBinding(t *testing.T) {
 	if !strings.Contains(fragment, secondGroupName+" [owner]") {
 		t.Fatalf("workspace groups list does not render group name label: %q", secondGroupName)
 	}
+	if !strings.Contains(fragment, `<div id="todos" data-group-id="`+activeGroupID+`"`) {
+		t.Fatalf("workspace todos fragment missing active group data-group-id guard for %q", activeGroupID)
+	}
 	if !strings.Contains(fragment, `data-group-id="`+secondGroupID+`"`) {
 		t.Fatalf("workspace groups list missing group id dataset binding for %q", secondGroupID)
 	}
@@ -278,6 +290,12 @@ func TestWorkspaceFragmentUsesGroupNamesAndSelectionBinding(t *testing.T) {
 	}
 	if !strings.Contains(fragment, `@get('/ui/workspace?group_id=' + evt.currentTarget.dataset.groupId`) {
 		t.Fatalf("workspace groups list missing selected-group fetch expression")
+	}
+	if !strings.Contains(fragment, `@get('/events?group_id=' + evt.currentTarget.dataset.groupId + '&token=' + $access_token`) {
+		t.Fatalf("workspace groups list missing inline connect stream action")
+	}
+	if !strings.Contains(fragment, `>Connect</button>`) {
+		t.Fatalf("workspace groups list missing inline Connect button")
 	}
 }
 
@@ -309,6 +327,9 @@ func TestWorkspaceFragmentUsesSafeTodoButtonBindings(t *testing.T) {
 	if strings.Contains(fragment, "this.dataset.inputId") || strings.Contains(fragment, "this.dataset.todoId") {
 		t.Fatalf("workspace todo actions still use unsupported this.dataset bindings")
 	}
+	if strings.Contains(fragment, "badge badge-ghost badge-sm\">group ") {
+		t.Fatalf("workspace todo cards should not render raw group id badges")
+	}
 }
 
 func TestDeleteGroupOwnerOnlyAndWorkspaceRefresh(t *testing.T) {
@@ -338,6 +359,9 @@ func TestDeleteGroupOwnerOnlyAndWorkspaceRefresh(t *testing.T) {
 	}
 	if !strings.Contains(before, "@delete($api_base + '/api/v1/groups/' + evt.currentTarget.dataset.groupId") {
 		t.Fatalf("expected workspace fragment to include delete group datastar action")
+	}
+	if !strings.Contains(before, "@setAll(true, {include: /^groups_dirty$/})") {
+		t.Fatalf("expected workspace fragment to mark groups_dirty before delete action")
 	}
 
 	status, body = deleteGroup(t, stack.commandURL, ownerToken, deleteGroupID)
