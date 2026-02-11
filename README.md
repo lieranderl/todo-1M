@@ -4,23 +4,23 @@ A high-performance, event-driven Todo application designed for 1 million concurr
 
 ## Architecture Highlights
 - **CQRS split**:
-  - `command-api` (`:8080`) handles writes (auth, groups, commands).
-  - `sse-streamer` (`:8081`) handles reads (`/api/v1/groups`, `/api/v1/todos`) and SSE.
+  - `command-api` (`:8080`) handles auth + writes (`/api/v1/command`, group mutations).
+  - `sse-streamer` (`:8081`) handles reads (`/api/v1/groups`, `/api/v1/todos`, `/ui/workspace`) and SSE.
 - **Backbone**: NATS JetStream with deterministic subject sharding (1024 partitions).
 - **Compute**: Go microservices.
 - **Frontend**: Datastar + Templ.
 - **UI access model**:
   - `/` and `/login` are public authentication pages.
-  - `/app` and `/architecture` are token-gated in the browser.
+  - `/app`, `/architecture`, and `/settings` are token-gated in the browser.
 - **Networking target**: Cilium Gateway API (Kubernetes deployment).
-- **Persistence**: Postgres read model (`users`, `groups`, `group_members`, `refresh_tokens`, `todo_events`, `todos` projection).
+- **Persistence**: Postgres read model (`users`, `groups`, `group_members`, `refresh_tokens`, `todo_events`, `todos`, `group_projection_offsets`).
 - **Collaboration controls**: Group RBAC (`owner`, `admin`, `member`) with edit/delete moderation rules.
 
 ## System Diagram (End-to-End)
 ```mermaid
 flowchart LR
-    B[Browser<br/>Templ + Datastar UI] -->|POST /api/v1/auth/*<br/>POST /api/v1/groups*<br/>POST /api/v1/command| A[command-api :8080]
-    B -->|GET /api/v1/groups<br/>GET /api/v1/todos<br/>SSE /events| S[sse-streamer :8081]
+    B[Browser<br/>Templ + Datastar UI] -->|POST /api/v1/auth/*<br/>POST/PATCH/DELETE /api/v1/groups*<br/>POST /api/v1/command| A[command-api :8080]
+    B -->|GET /api/v1/groups<br/>GET /api/v1/todos<br/>GET /ui/workspace<br/>SSE /events| S[sse-streamer :8081]
 
     A -->|publish app.command.<shard>.group.<group_id>| N[(NATS JetStream)]
     N -->|consume app.command.>| D[domain-engine]
@@ -29,7 +29,7 @@ flowchart LR
     N -->|consume app.event.>| K[data-sink]
     K -->|append todo_events + update todos projection| P[(Postgres)]
 
-    N -->|consume app.event.>| S
+    N -->|consume app.event.*.group.<group_id>| S
     S -->|SSE: datastar-patch-elements + todo-event| B
 ```
 
@@ -41,8 +41,10 @@ flowchart LR
     U[User] --> L[/ and /login]
     L -->|register/login success| W[/app]
     W -->|toolbar nav| AR[/architecture]
+    W -->|toolbar nav| ST[/settings]
     W -->|logout| L
     AR -->|logout| L
+    ST -->|logout| L
 ```
 
 ### 2. Authentication and Session Lifecycle
@@ -70,7 +72,7 @@ sequenceDiagram
 2. Creator is auto-added as `owner`.
 3. `owner/admin` can add members (`POST /api/v1/groups/{groupID}/members`).
 4. Only `owner` can promote/demote role (`PATCH /api/v1/groups/{groupID}/members/role`).
-5. Membership is enforced on both read (`/api/v1/groups`, `/api/v1/todos`, `/events`) and write (`/api/v1/command`) paths.
+5. Membership is enforced on both read (`/api/v1/groups`, `/api/v1/todos`, `/ui/workspace`, `/events`) and write (`/api/v1/command`) paths.
 
 ### RBAC Matrix
 | Capability | Owner | Admin | Member |
@@ -107,15 +109,18 @@ sequenceDiagram
     DE->>NATS: publish todo.created/updated/deleted event
     NATS->>DS: deliver event
     DS->>DB: append todo_events + project todos table
-    NATS->>SSE: deliver same event
+    NATS->>SSE: deliver app.event.*.group.<id>
     SSE-->>Browser: SSE feed patch + todo-event payload
     Browser->>SSE: GET /api/v1/todos?group_id=...
+    Browser->>SSE: GET /ui/workspace?group_id=...
 ```
 
 ### 5. Realtime Feed and Board Consistency
 - Feed updates are pushed immediately from event stream.
 - Todo board reads from projected read model (`todos` table).
-- UI consumes `todo-event` and performs short retry-based reconciliation, so newly created/updated/deleted items appear consistently even under projection lag.
+- SSE subscribes to group-scoped NATS subjects (`app.event.*.group.<group_id>`).
+- UI consumes `todo-event` and performs short retry-based reconciliation with projection offsets, so newly created/updated/deleted items appear consistently even under projection lag.
+- Todo board refresh from SSE is debounced to reduce read pressure during event bursts.
 - Realtime feed panel is optional in `/app` using the `Show Realtime Feed` checkbox (preference stored in localStorage).
 
 ### Kubernetes Edge Flow (target deployment)
@@ -242,5 +247,6 @@ make clean-local
   - `/` and `/login` authentication page
   - `/app` authenticated workspace
   - `/architecture` authenticated architecture reference
+  - `/settings` authenticated RBAC reference
 - **/infrastructure**: Kubernetes manifests (Cilium, NATS, CNPG).
 - **/.runtime**: Local-only runtime state (data, logs, pids).

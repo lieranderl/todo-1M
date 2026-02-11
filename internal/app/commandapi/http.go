@@ -48,7 +48,6 @@ func (h *Handler) Router() http.Handler {
 
 	r.Group(func(authR chi.Router) {
 		authR.Use(h.authMiddleware)
-		authR.Get("/api/v1/groups", h.handleListGroups)
 		authR.Post("/api/v1/groups", h.handleCreateGroup)
 		authR.Delete("/api/v1/groups/{groupID}", h.handleDeleteGroup)
 		authR.Post("/api/v1/groups/{groupID}/members", h.handleAddMember)
@@ -159,16 +158,6 @@ func (h *Handler) handleLogout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
-}
-
-func (h *Handler) handleListGroups(w http.ResponseWriter, r *http.Request) {
-	claims := claimsFromContext(r.Context())
-	groups, err := h.Identity.ListGroups(r.Context(), claims.Subject)
-	if err != nil {
-		h.writeError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	h.writeJSON(w, http.StatusOK, map[string]any{"groups": groups})
 }
 
 func (h *Handler) handleCreateGroup(w http.ResponseWriter, r *http.Request) {

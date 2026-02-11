@@ -12,20 +12,70 @@ spec:
     - matches:
         - path:
             type: PathPrefix
+            value: /api/v1/auth
+      backendRefs:
+        - name: command-api
+          port: 8080
+    - matches:
+        - path:
+            type: PathPrefix
             value: /api/v1/command
       backendRefs:
         - name: command-api
           port: 8080
-      filters:
-        - type: RequestHeaderModifier
-          requestHeaderModifier:
-            add:
-              - name: X-User-ID
-                value: "from-auth-claim" # Placeholder for JWT claim extraction
     - matches:
+        - method: POST
+          path:
+            type: PathPrefix
+            value: /api/v1/groups
+        - method: PATCH
+          path:
+            type: PathPrefix
+            value: /api/v1/groups
+        - method: DELETE
+          path:
+            type: PathPrefix
+            value: /api/v1/groups
+      backendRefs:
+        - name: command-api
+          port: 8080
+    - matches:
+        - method: GET
+          path:
+            type: Exact
+            value: /api/v1/groups
+        - method: GET
+          path:
+            type: PathPrefix
+            value: /api/v1/todos
         - path:
             type: PathPrefix
             value: /events
+        - path:
+            type: PathPrefix
+            value: /ui/workspace
+      backendRefs:
+        - name: sse-streamer
+          port: 8081
+    - matches:
+        - path:
+            type: Exact
+            value: /
+        - path:
+            type: Exact
+            value: /login
+        - path:
+            type: Exact
+            value: /app
+        - path:
+            type: Exact
+            value: /architecture
+        - path:
+            type: Exact
+            value: /settings
+        - path:
+            type: PathPrefix
+            value: /static
       backendRefs:
         - name: sse-streamer
           port: 8081

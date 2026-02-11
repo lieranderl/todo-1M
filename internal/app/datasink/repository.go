@@ -12,7 +12,6 @@ const createEventsTableSQL = `
 CREATE TABLE IF NOT EXISTS todo_events (
   event_id text PRIMARY KEY,
   command_id text NOT NULL,
-  entity_id text NOT NULL,
   group_id text NOT NULL,
   actor_user_id text NOT NULL,
   actor_name text NOT NULL DEFAULT '',
@@ -32,9 +31,9 @@ const alterTodoEventsActorSQL = `
 ALTER TABLE todo_events
 ADD COLUMN IF NOT EXISTS actor_user_id text`
 
-const alterTodoEventsEntitySQL = `
-ALTER TABLE todo_events
-ADD COLUMN IF NOT EXISTS entity_id text`
+const dropTodoEventsEntitySQL = `
+ALTER TABLE IF EXISTS todo_events
+DROP COLUMN IF EXISTS entity_id`
 
 const alterTodoEventsTodoIDSQL = `
 ALTER TABLE todo_events
@@ -67,10 +66,10 @@ CREATE TABLE IF NOT EXISTS group_projection_offsets (
 
 const insertEventSQL = `
 INSERT INTO todo_events (
-  event_id, command_id, entity_id, group_id, actor_user_id, actor_name, todo_id,
+  event_id, command_id, group_id, actor_user_id, actor_name, todo_id,
   event_type, title, shard_id, occurred_at
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 ON CONFLICT (event_id) DO NOTHING
 `
 
@@ -129,7 +128,7 @@ func (r *EventRepository) EnsureSchema(ctx context.Context) error {
 	if _, err := r.Pool.Exec(ctx, alterTodoEventsActorSQL); err != nil {
 		return err
 	}
-	if _, err := r.Pool.Exec(ctx, alterTodoEventsEntitySQL); err != nil {
+	if _, err := r.Pool.Exec(ctx, dropTodoEventsEntitySQL); err != nil {
 		return err
 	}
 	if _, err := r.Pool.Exec(ctx, alterTodoEventsTodoIDSQL); err != nil {
@@ -157,7 +156,6 @@ func (r *EventRepository) InsertEvent(ctx context.Context, event contracts.TodoE
 	if _, err := tx.Exec(ctx, insertEventSQL,
 		event.EventID,
 		event.CommandID,
-		event.ActorUserID,
 		event.GroupID,
 		event.ActorUserID,
 		event.ActorName,

@@ -120,42 +120,6 @@ func main() {
 		writeJSON(w, http.StatusOK, map[string]any{"todos": todos})
 	})
 
-	mux.HandleFunc("/api/v1/projection-offset", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet {
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
-		claims, ok := claimsFromAuthHeader(w, r, tokenManager)
-		if !ok {
-			return
-		}
-
-		groupID := strings.TrimSpace(r.URL.Query().Get("group_id"))
-		if groupID == "" {
-			http.Error(w, "group_id is required", http.StatusBadRequest)
-			return
-		}
-		member, err := identityRepo.IsUserInGroup(r.Context(), claims.Subject, groupID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		if !member {
-			http.Error(w, "forbidden", http.StatusForbidden)
-			return
-		}
-
-		offset, err := queryRepo.GetGroupProjectionOffset(r.Context(), groupID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		writeJSON(w, http.StatusOK, map[string]any{
-			"group_id":       groupID,
-			"last_event_seq": offset,
-		})
-	})
-
 	mux.HandleFunc("/ui/workspace", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -275,12 +239,9 @@ func main() {
 		eventCh := make(chan streamEvent, 64)
 		var sub *nats.Subscription
 		if js != nil && nc != nil && nc.IsConnected() {
-			sub, err = js.Subscribe("app.event.>", func(msg *nats.Msg) {
+			sub, err = js.Subscribe(groupEventSubject(groupID), func(msg *nats.Msg) {
 				var event contracts.TodoEvent
 				if err := json.Unmarshal(msg.Data, &event); err != nil {
-					return
-				}
-				if event.GroupID != groupID {
 					return
 				}
 
@@ -302,6 +263,42 @@ func main() {
 			defer sub.Unsubscribe()
 		}
 
+		const todoRefreshDebounce = 75 * time.Millisecond
+		var (
+			pendingSeq   uint64
+			refreshTimer *time.Timer
+			refreshCh    <-chan time.Time
+		)
+		scheduleTodoRefresh := func(seq uint64) {
+			if seq > pendingSeq {
+				pendingSeq = seq
+			}
+			if refreshTimer == nil {
+				refreshTimer = time.NewTimer(todoRefreshDebounce)
+				refreshCh = refreshTimer.C
+				return
+			}
+			if !refreshTimer.Stop() {
+				select {
+				case <-refreshTimer.C:
+				default:
+				}
+			}
+			refreshTimer.Reset(todoRefreshDebounce)
+			refreshCh = refreshTimer.C
+		}
+		defer func() {
+			if refreshTimer == nil {
+				return
+			}
+			if !refreshTimer.Stop() {
+				select {
+				case <-refreshTimer.C:
+				default:
+				}
+			}
+		}()
+
 		sendFragment("Connected to Group Stream!", "Waiting for updates...")
 		sendTodos(0)
 
@@ -321,7 +318,10 @@ func main() {
 				default:
 					sendFragment("Group updated", "change by "+event.ActorName)
 				}
-				sendTodos(streamEvent.Seq)
+				scheduleTodoRefresh(streamEvent.Seq)
+			case <-refreshCh:
+				sendTodos(pendingSeq)
+				refreshCh = nil
 			}
 		}
 	})
@@ -391,6 +391,10 @@ func waitForProjectionOffset(ctx context.Context, repo *query.TodoRepository, gr
 		}
 		delay = nextDelay
 	}
+}
+
+func groupEventSubject(groupID string) string {
+	return "app.event.*.group." + groupID
 }
 
 func renderGroupsList(groups []identity.GroupMembership, activeGroupID string) string {

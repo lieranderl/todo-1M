@@ -349,7 +349,7 @@ func TestDeleteGroupOwnerOnlyAndWorkspaceRefresh(t *testing.T) {
 	if strings.Contains(after, deleteGroupName+" [owner]") {
 		t.Fatalf("workspace fragment still contains deleted group name %q", deleteGroupName)
 	}
-	groups := listGroups(t, stack.commandURL, ownerToken)
+	groups := listGroups(t, strings.TrimSuffix(stack.streamURL, "/events"), ownerToken)
 	for _, g := range groups {
 		if g.GroupID == deleteGroupID {
 			t.Fatalf("deleted group %q still present in list groups response", deleteGroupID)
@@ -608,7 +608,7 @@ func deleteGroup(t *testing.T, commandURL string, token string, groupID string) 
 	return resp.StatusCode, body
 }
 
-func listGroups(t *testing.T, commandURL, token string) []struct {
+func listGroups(t *testing.T, streamerBaseURL, token string) []struct {
 	GroupID   string `json:"group_id"`
 	GroupName string `json:"group_name"`
 	Role      string `json:"role"`
@@ -616,7 +616,7 @@ func listGroups(t *testing.T, commandURL, token string) []struct {
 	t.Helper()
 	req, err := http.NewRequest(
 		http.MethodGet,
-		strings.TrimSuffix(commandURL, "/api/v1/command")+"/api/v1/groups",
+		strings.TrimSuffix(streamerBaseURL, "/")+"/api/v1/groups",
 		nil,
 	)
 	if err != nil {
