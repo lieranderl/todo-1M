@@ -1,0 +1,81 @@
+{{- if .Values.monitoring.podMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ include "todo1m.fullname" . }}-command-api
+  namespace: {{ .Values.monitoring.podMonitor.namespace }}
+  labels:
+    {{- include "todo1m.labels" . | nindent 4 }}
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: command-api
+  podMetricsEndpoints:
+    - port: http
+      path: /metrics
+      interval: {{ .Values.monitoring.podMonitor.interval | quote }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ include "todo1m.fullname" . }}-sse-streamer
+  namespace: {{ .Values.monitoring.podMonitor.namespace }}
+  labels:
+    {{- include "todo1m.labels" . | nindent 4 }}
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: sse-streamer
+  podMetricsEndpoints:
+    - port: http
+      path: /metrics
+      interval: {{ .Values.monitoring.podMonitor.interval | quote }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ include "todo1m.fullname" . }}-domain-engine
+  namespace: {{ .Values.monitoring.podMonitor.namespace }}
+  labels:
+    {{- include "todo1m.labels" . | nindent 4 }}
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: domain-engine
+  podMetricsEndpoints:
+    - port: health
+      path: /metrics
+      interval: {{ .Values.monitoring.podMonitor.interval | quote }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ include "todo1m.fullname" . }}-data-sink
+  namespace: {{ .Values.monitoring.podMonitor.namespace }}
+  labels:
+    {{- include "todo1m.labels" . | nindent 4 }}
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: data-sink
+  podMetricsEndpoints:
+    - port: health
+      path: /metrics
+      interval: {{ .Values.monitoring.podMonitor.interval | quote }}
+{{- end }}

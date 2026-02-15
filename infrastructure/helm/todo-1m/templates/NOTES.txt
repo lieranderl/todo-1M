@@ -1,0 +1,10 @@
+Todo-1M has been installed.
+
+To access UI/API locally:
+
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "todo1m.fullname" . }}-sse-streamer 18081:8081
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "todo1m.fullname" . }}-command-api 18080:8080
+
+Then open:
+  UI: http://localhost:18081
+  API: http://localhost:18080

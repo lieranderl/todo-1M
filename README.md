@@ -32,6 +32,7 @@ A high-performance, event-driven Todo application designed for 1 million concurr
 | `POST` | `/api/v1/command` | Bearer | Submit todo commands (`create/update/delete`) |
 | `GET` | `/healthz` | Public | Liveness probe endpoint |
 | `GET` | `/readyz` | Public | Readiness probe (NATS + Postgres checks) |
+| `GET` | `/metrics` | Public | Prometheus metrics |
 
 ### sse-streamer (`:8081`)
 | Method | Path | Auth | Purpose |
@@ -43,6 +44,7 @@ A high-performance, event-driven Todo application designed for 1 million concurr
 | `GET` | `/events/disconnect` | Bearer | Cancel active SSE stream for current user |
 | `GET` | `/healthz` | Public | Liveness probe endpoint |
 | `GET` | `/readyz` | Public | Readiness probe (NATS + Postgres checks) |
+| `GET` | `/metrics` | Public | Prometheus metrics |
 
 Notes:
 - Group name/role label is non-interactive.
@@ -173,8 +175,11 @@ flowchart LR
     R --> S[sse-streamer Service]
 ```
 
-Application workloads and probes are defined in `infrastructure/k8s/05-app-workloads.yaml`.
-Autoscaling and disruption safeguards are defined in `infrastructure/k8s/07-scalability.yaml`.
+Kubernetes runtime resources are Helm-managed:
+- Workloads/services/probes: `infrastructure/helm/todo-1m/templates/app.yaml`
+- Shared app config: `infrastructure/helm/todo-1m/templates/configmap.yaml`
+- Secrets: `infrastructure/helm/todo-1m/templates/secrets.yaml`
+- HPA/PDB: `infrastructure/helm/todo-1m/templates/scaling.yaml`
 
 ### Kubernetes Cluster Lifecycle
 
@@ -203,11 +208,11 @@ kubectl config current-context
 make k8s-status
 
 # 2) Verify app workloads are healthy
-kubectl -n default get deploy,pods,svc -o wide
+kubectl -n todo-1m get deploy,pods,svc -o wide
 
 # 3) Recreate local access tunnels (keep both running)
-kubectl -n default port-forward svc/command-api 18080:8080
-kubectl -n default port-forward svc/sse-streamer 18081:8081
+kubectl -n todo-1m port-forward svc/todo-1m-command-api 18080:8080
+kubectl -n todo-1m port-forward svc/todo-1m-sse-streamer 18081:8081
 
 # 4) Quick endpoint checks from your machine
 curl http://127.0.0.1:18080/healthz
@@ -217,40 +222,115 @@ curl -I http://127.0.0.1:18081/login
 If a port-forward dies, start it again.  
 If `Cross-Origin Request Blocked` appears with `status code: (null)`, treat it as a connectivity issue first (usually a dead port-forward).
 
+### Docker-First Runtime (Containers, No Load Test)
+
+Run the full app + monitoring stack locally in Docker (without synthetic load):
+
+```bash
+make docker-monitoring-up
+```
+
+Open:
+- App UI: `http://localhost:18081`
+- API: `http://localhost:18080`
+- Prometheus: `http://localhost:9090`
+- Grafana: `http://localhost:3000` (`admin` / `admin`)
+
+Stop:
+```bash
+make docker-monitoring-down
+```
+
 ### Kubernetes Deployment Quickstart
 
-#### GHCR
+#### Helm (Full Stack, Recommended)
 
-1. Build/push images:
+1. Preflight check chart render (must include `todo-1m-app-config`):
    ```bash
-   docker login ghcr.io -u <github-username>
-   make image-build-push
-   ```
-   Optional overrides:
-   ```bash
-   make image-build-push IMAGE_OWNER=<github-username> IMAGE_TAG=<tag> IMAGE_PLATFORM=linux/amd64
+   helm template todo-1m ./infrastructure/helm/todo-1m -n todo-1m | rg "name: todo-1m-app-config"
    ```
 
-2. Create pull secret and apply base workloads:
+2. Install/upgrade the full stack (NATS + Postgres + all app services):
    ```bash
-   kubectl create secret docker-registry ghcr-creds \
+   helm upgrade --install todo-1m ./infrastructure/helm/todo-1m \
+     -n todo-1m --create-namespace \
+     --set jwtSecret="$(openssl rand -hex 32)" \
+     --wait --rollback-on-failure --timeout 10m
+   ```
+
+3. If your GHCR images are private, create pull secret and attach it:
+   ```bash
+   kubectl -n todo-1m create secret docker-registry ghcr-creds \
      --docker-server=ghcr.io \
      --docker-username=<github-username> \
-     --docker-password=<github-pat-with-read:packages> \
-     --namespace default
+     --docker-password=<github-pat-with-read:packages>
 
-   # set a strong random value for jwt-secret before apply
-   kubectl apply -f infrastructure/k8s/06-app-secrets.example.yaml
-   kubectl apply -f infrastructure/k8s/05-app-workloads.yaml
-   kubectl apply -f infrastructure/k8s/07-scalability.yaml
+   helm upgrade --install todo-1m ./infrastructure/helm/todo-1m \
+     -n todo-1m \
+     --reuse-values \
+     --wait --rollback-on-failure --timeout 10m \
+     --set imagePullSecrets[0].name=ghcr-creds
    ```
 
-3. Ensure `infrastructure/k8s/05-app-workloads.yaml` image digests match the images you pushed.
+4. Verify Helm-created config and wait for workloads:
+   ```bash
+   kubectl -n todo-1m get configmap todo-1m-app-config
+   kubectl -n todo-1m get secret todo-1m-app-secrets todo-1m-db-app
+   kubectl -n todo-1m rollout status deploy/todo-1m-command-api
+   kubectl -n todo-1m rollout status deploy/todo-1m-sse-streamer
+   kubectl -n todo-1m rollout status deploy/todo-1m-domain-engine
+   kubectl -n todo-1m rollout status deploy/todo-1m-data-sink
+   ```
+
+5. Access the app locally via port-forward:
+   ```bash
+   kubectl -n todo-1m port-forward svc/todo-1m-command-api 18080:8080
+   kubectl -n todo-1m port-forward svc/todo-1m-sse-streamer 18081:8081
+   ```
+
+6. (Optional) Install in-cluster monitoring (Prometheus + Grafana):
+   ```bash
+   helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+   helm repo update
+   helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
+     -n monitoring --create-namespace \
+	     --set prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false \
+	     --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false
+	   ```
+
+7. (Optional) Enable chart-managed PodMonitors:
+   ```bash
+   helm upgrade --install todo-1m ./infrastructure/helm/todo-1m \
+     -n todo-1m \
+     --reuse-values \
+     --wait --rollback-on-failure --timeout 10m \
+     --set monitoring.podMonitor.enabled=true \
+     --set monitoring.podMonitor.namespace=monitoring
+   ```
+
+8. Port-forward monitoring UIs:
+   ```bash
+   kubectl -n monitoring port-forward svc/monitoring-grafana 3000:80
+   kubectl -n monitoring port-forward svc/monitoring-kube-prometheus-prometheus 9090:9090
+   ```
+
+Common Helm issue:
+- If pods show `CreateContainerConfigError` with `configmap "todo-1m-app-config" not found`, re-apply the chart:
+  ```bash
+  helm upgrade --install todo-1m ./infrastructure/helm/todo-1m -n todo-1m --reuse-values --wait --rollback-on-failure --timeout 10m
+  kubectl -n todo-1m get configmap todo-1m-app-config
+  ```
+- If you manually created `todo-1m-app-config` before this fix, let Helm take ownership by recreating it via chart:
+  ```bash
+  kubectl -n todo-1m delete configmap todo-1m-app-config --ignore-not-found
+  helm upgrade --install todo-1m ./infrastructure/helm/todo-1m -n todo-1m --reuse-values --wait --rollback-on-failure --timeout 10m
+  ```
 
 ## Prerequisites
 - **Go 1.22+**: [Download](https://go.dev/dl/)
 - **Node.js 20+ + npm**: Required for local Tailwind + DaisyUI CSS build.
 - **Docker & Docker Compose**: For local infrastructure.
+- **kubectl + Helm 3**: Required for Kubernetes deployment/operations.
 - **Make**: For running workflow commands.
 - **Templ**: `go install github.com/a-h/templ/cmd/templ@latest`
 
@@ -363,11 +443,94 @@ Clean local artifacts (binaries + `.runtime` + Docker volumes):
 make clean-local
 ```
 
+## 📈 Load Testing + Monitoring
+
+Use the dedicated compose stack to run the app, simulate hundreds of users, and monitor infra/service health in real time.
+
+Start stack (app + load generator + Prometheus + Grafana + exporters):
+```bash
+make loadtest-up
+```
+
+Tail logs for load and core services:
+```bash
+make loadtest-logs
+```
+
+Stop stack:
+```bash
+make loadtest-down
+```
+
+Run app + monitoring only (without load-generator):
+```bash
+make docker-monitoring-up
+```
+
+Default URLs:
+- App UI: `http://localhost:18081`
+- API: `http://localhost:18080`
+- Prometheus: `http://localhost:9090`
+- Grafana: `http://localhost:3000` (`admin` / `admin`)
+- Load generator metrics: `http://localhost:9099/metrics`
+
+Load generator defaults (override in `docker-compose.loadtest.yml`):
+- `LOADGEN_USERS=200`
+- `LOADGEN_DURATION=10m`
+- `LOADGEN_RAMP_UP=30s`
+- `LOADGEN_ACTIONS_PER_USER_PER_SECOND=0.3`
+- `LOADGEN_ENABLE_SSE=true`
+
+Predefined load profiles (restart `load-generator` only):
+- `make loadtest-profile-smoke`
+  - `LOADGEN_USERS=25`
+  - `LOADGEN_SETUP_CONCURRENCY=10`
+  - `LOADGEN_STARTUP_WAIT=90s`
+  - `LOADGEN_DURATION=3m`
+  - `LOADGEN_RAMP_UP=30s`
+  - `LOADGEN_ACTIONS_PER_USER_PER_SECOND=0.10`
+  - `LOADGEN_REQUEST_TIMEOUT=10s`
+  - `LOADGEN_ENABLE_SSE=true`
+- `make loadtest-profile-baseline`
+  - `LOADGEN_USERS=200`
+  - `LOADGEN_SETUP_CONCURRENCY=25`
+  - `LOADGEN_STARTUP_WAIT=2m`
+  - `LOADGEN_DURATION=10m`
+  - `LOADGEN_RAMP_UP=90s`
+  - `LOADGEN_ACTIONS_PER_USER_PER_SECOND=0.30`
+  - `LOADGEN_REQUEST_TIMEOUT=10s`
+  - `LOADGEN_ENABLE_SSE=true`
+- `make loadtest-profile-stress`
+  - `LOADGEN_USERS=800`
+  - `LOADGEN_SETUP_CONCURRENCY=80`
+  - `LOADGEN_STARTUP_WAIT=3m`
+  - `LOADGEN_DURATION=20m`
+  - `LOADGEN_RAMP_UP=3m`
+  - `LOADGEN_ACTIONS_PER_USER_PER_SECOND=0.80`
+  - `LOADGEN_REQUEST_TIMEOUT=10s`
+  - `LOADGEN_ENABLE_SSE=true`
+
+Recommended PromQL checks:
+- Online users (server truth): `todo1m_online_users`
+- Active SSE fanout subscribers: `todo1m_active_group_subscribers`
+- Loadgen VUs / SSE-connected users:
+  - `todo1m_loadgen_virtual_users`
+  - `todo1m_loadgen_sse_connected_users`
+- Request throughput:
+  - `sum(rate(todo1m_loadgen_requests_total{outcome="success"}[1m]))`
+  - `sum(rate(todo1m_loadgen_requests_total{outcome="error"}[1m]))`
+- CPU by container: `sum by (container) (rate(container_cpu_usage_seconds_total{container!=""}[1m]))`
+- RAM by container: `sum by (container) (container_memory_working_set_bytes{container!=""})`
+- Postgres active connections: `pg_stat_database_numbackends{datname="app"}`
+- NATS client connections: `gnatsd_varz_connections`
+
 ## 📂 Project Structure
 - **/cmd**: Entrypoints for all services.
   - `command-api`: HTTP ingress for actions.
   - `sse-streamer`: SSE egress for UI updates.
   - `domain-engine`: Core logic processor.
+  - `data-sink`: Event persistence + read-model projection.
+  - `load-generator`: Synthetic user/message load container.
 - **/internal/app**: Service use-cases and domain logic (testable, framework-light).
   - `commandapi`: request validation + command publishing use-case.
   - `domainengine`: command->event transformation use-case.
@@ -384,5 +547,7 @@ make clean-local
   - `page_settings.templ`: `/settings`.
   - `/static/styles.input.css`: Tailwind/Daisy source.
   - `/static/styles.css`: generated stylesheet (embedded by `assets.go`).
-- **/infrastructure**: Kubernetes manifests (Cilium, NATS, CNPG).
+- **/infrastructure**: Deployment and observability assets used by this repo.
+- **/infrastructure/helm/todo-1m**: Helm chart for full-stack Kubernetes deployment.
+- **/infrastructure/monitoring**: Prometheus + Grafana provisioning for load testing.
 - **/.runtime**: Local-only runtime state (data, logs, pids).

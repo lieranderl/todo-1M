@@ -1,0 +1,181 @@
+services:
+  nats:
+    image: nats:2.10-alpine
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    command: ["-js", "-sd", "/data"]
+    volumes:
+      - ./.runtime/data/loadtest/nats:/data
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: app
+    volumes:
+      - ./.runtime/data/loadtest/postgres:/var/lib/postgresql/data
+
+  command-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: command-api
+    environment:
+      COMMAND_API_ADDR: :8080
+      UI_ORIGIN: http://localhost:18081
+      NATS_URL: nats://nats:4222
+      DATABASE_URL: postgres://app:password@postgres:5432/app?sslmode=disable
+      JWT_SECRET: dev-insecure-change-me
+      SHUTDOWN_TIMEOUT: 10s
+    depends_on:
+      - nats
+      - postgres
+    ports:
+      - "18080:8080"
+
+  sse-streamer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: sse-streamer
+    environment:
+      SSE_STREAMER_ADDR: :8081
+      NATS_URL: nats://nats:4222
+      DATABASE_URL: postgres://app:password@postgres:5432/app?sslmode=disable
+      JWT_SECRET: dev-insecure-change-me
+      SHUTDOWN_TIMEOUT: 10s
+    depends_on:
+      - nats
+      - postgres
+    ports:
+      - "18081:8081"
+
+  domain-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: domain-engine
+    environment:
+      DOMAIN_ENGINE_HEALTH_ADDR: :8082
+      NATS_URL: nats://nats:4222
+      SHUTDOWN_TIMEOUT: 10s
+    depends_on:
+      - nats
+
+  data-sink:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: data-sink
+    environment:
+      DATA_SINK_HEALTH_ADDR: :8083
+      NATS_URL: nats://nats:4222
+      DATABASE_URL: postgres://app:password@postgres:5432/app?sslmode=disable
+      SHUTDOWN_TIMEOUT: 10s
+    depends_on:
+      - nats
+      - postgres
+
+  load-generator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: load-generator
+    environment:
+      LOADGEN_COMMAND_API_BASE: http://command-api:8080
+      LOADGEN_SSE_BASE: http://sse-streamer:8081
+      LOADGEN_USERS: ${LOADGEN_USERS:-200}
+      LOADGEN_SETUP_CONCURRENCY: ${LOADGEN_SETUP_CONCURRENCY:-25}
+      LOADGEN_STARTUP_WAIT: ${LOADGEN_STARTUP_WAIT:-2m}
+      LOADGEN_DURATION: ${LOADGEN_DURATION:-10m}
+      LOADGEN_RAMP_UP: ${LOADGEN_RAMP_UP:-30s}
+      LOADGEN_ACTIONS_PER_USER_PER_SECOND: ${LOADGEN_ACTIONS_PER_USER_PER_SECOND:-0.3}
+      LOADGEN_REQUEST_TIMEOUT: ${LOADGEN_REQUEST_TIMEOUT:-10s}
+      LOADGEN_ENABLE_SSE: ${LOADGEN_ENABLE_SSE:-true}
+      LOADGEN_METRICS_ADDR: ${LOADGEN_METRICS_ADDR:-:9099}
+    depends_on:
+      - command-api
+      - sse-streamer
+    ports:
+      - "9099:9099"
+    restart: "no"
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    volumes:
+      - ./infrastructure/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./.runtime/data/loadtest/prometheus:/prometheus
+    depends_on:
+      - command-api
+      - sse-streamer
+      - domain-engine
+      - data-sink
+      - cadvisor
+      - node-exporter
+      - postgres-exporter
+      - nats-exporter
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:11.2.2
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./infrastructure/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infrastructure/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ./.runtime/data/loadtest/grafana:/var/lib/grafana
+    depends_on:
+      - prometheus
+    ports:
+      - "3000:3000"
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    privileged: true
+    ports:
+      - "8088:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    ports:
+      - "9100:9100"
+
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.15.0
+    environment:
+      DATA_SOURCE_NAME: postgresql://app:password@postgres:5432/app?sslmode=disable
+    depends_on:
+      - postgres
+    ports:
+      - "9187:9187"
+
+  nats-exporter:
+    image: natsio/prometheus-nats-exporter:0.18.0
+    command:
+      - "-varz"
+      - "-connz"
+      - "-subsz"
+      - "http://nats:8222"
+    depends_on:
+      - nats
+    ports:
+      - "7777:7777"

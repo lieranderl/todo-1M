@@ -26,12 +26,44 @@ import (
 	platformauth "github.com/todo-1m/project/internal/platform/auth"
 	"github.com/todo-1m/project/internal/platform/dbpool"
 	"github.com/todo-1m/project/internal/platform/env"
+	"github.com/todo-1m/project/internal/platform/metrics"
 	"github.com/todo-1m/project/internal/platform/natsutil"
 	"github.com/todo-1m/project/services/frontend"
 )
 
 var userStreams = newUserStreamRegistry()
 var groupStreams *groupStreamRegistry
+
+var (
+	onlineUsersGauge = metrics.NewGaugeFunc(metrics.Opts{
+		Name: "todo1m_online_users",
+		Help: "Current number of users with active SSE streams.",
+	}, func() float64 {
+		return float64(userStreams.Count())
+	})
+	activeGroupStreamsGauge = metrics.NewGaugeFunc(metrics.Opts{
+		Name: "todo1m_active_group_streams",
+		Help: "Current number of active group stream fanout subscriptions.",
+	}, func() float64 {
+		if groupStreams == nil {
+			return 0
+		}
+		return float64(groupStreams.CountGroups())
+	})
+	activeGroupSubscribersGauge = metrics.NewGaugeFunc(metrics.Opts{
+		Name: "todo1m_active_group_subscribers",
+		Help: "Current total number of active SSE group subscribers.",
+	}, func() float64 {
+		if groupStreams == nil {
+			return 0
+		}
+		return float64(groupStreams.CountSubscribers())
+	})
+)
+
+func init() {
+	metrics.Default.MustRegister(onlineUsersGauge, activeGroupStreamsGauge, activeGroupSubscribersGauge)
+}
 
 func main() {
 	runCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -79,6 +111,7 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
 	})
+	mux.Handle("/metrics", metrics.DefaultHandler())
 	mux.Handle("/", templ.Handler(frontend.LoginPage()))
 	mux.Handle("/login", templ.Handler(frontend.LoginPage()))
 	mux.Handle("/app", templ.Handler(frontend.WorkspacePage()))
@@ -404,6 +437,12 @@ func (r *userStreamRegistry) Cancel(userID string) {
 	}
 }
 
+func (r *userStreamRegistry) Count() int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return len(r.byUser)
+}
+
 type groupStreamMessage struct {
 	Event *contracts.TodoEvent
 	Seq   uint64
@@ -473,6 +512,27 @@ func (r *groupStreamRegistry) Subscribe(groupID string) (<-chan groupStreamMessa
 	}
 
 	return ch, unsubscribe, nil
+}
+
+func (r *groupStreamRegistry) CountGroups() int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return len(r.byGroup)
+}
+
+func (r *groupStreamRegistry) CountSubscribers() int {
+	r.mu.Lock()
+	streams := make([]*groupStream, 0, len(r.byGroup))
+	for _, stream := range r.byGroup {
+		streams = append(streams, stream)
+	}
+	r.mu.Unlock()
+
+	total := 0
+	for _, stream := range streams {
+		total += stream.subscriberCount()
+	}
+	return total
 }
 
 func (s *groupStream) addSubscriber() (string, chan groupStreamMessage, error) {
@@ -620,6 +680,12 @@ func (s *groupStream) runSnapshotRefresh() {
 	}
 
 	s.broadcast(groupStreamMessage{Seq: targetSeq, Todos: todos})
+}
+
+func (s *groupStream) subscriberCount() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return len(s.subscribers)
 }
 
 func waitForIdentitySchema(ctx context.Context, repo *identity.PostgresRepository, timeout time.Duration) error {

@@ -18,6 +18,7 @@ import (
 	"github.com/todo-1m/project/internal/app/query"
 	"github.com/todo-1m/project/internal/platform/dbpool"
 	"github.com/todo-1m/project/internal/platform/env"
+	"github.com/todo-1m/project/internal/platform/metrics"
 	"github.com/todo-1m/project/internal/platform/natsutil"
 )
 
@@ -68,6 +69,7 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
 	})
+	mux.Handle("/metrics", metrics.DefaultHandler())
 	mux.Handle("/", handler.Router())
 
 	server := &http.Server{

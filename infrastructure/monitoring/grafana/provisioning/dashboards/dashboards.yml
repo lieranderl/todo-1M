@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: todo-1m
+    orgId: 1
+    folder: Todo-1M
+    type: file
+    allowUiUpdates: true
+    updateIntervalSeconds: 15
+    options:
+      path: /var/lib/grafana/dashboards

@@ -14,6 +14,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/todo-1m/project/internal/app/domainengine"
 	"github.com/todo-1m/project/internal/platform/env"
+	"github.com/todo-1m/project/internal/platform/metrics"
 	"github.com/todo-1m/project/internal/platform/natsutil"
 )
 
@@ -79,6 +80,7 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
 	})
+	healthMux.Handle("/metrics", metrics.DefaultHandler())
 	healthServer := &http.Server{
 		Addr:              healthAddr,
 		Handler:           healthMux,

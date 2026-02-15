@@ -1,0 +1,211 @@
+{{- if .Values.services.commandApi.pdb.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "todo1m.fullname" . }}-command-api-pdb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "todo1m.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.services.commandApi.pdb.minAvailable }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: command-api
+{{- end }}
+---
+{{- if .Values.services.sseStreamer.pdb.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "todo1m.fullname" . }}-sse-streamer-pdb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "todo1m.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.services.sseStreamer.pdb.minAvailable }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: sse-streamer
+{{- end }}
+---
+{{- if .Values.services.domainEngine.pdb.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "todo1m.fullname" . }}-domain-engine-pdb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "todo1m.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.services.domainEngine.pdb.minAvailable }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: domain-engine
+{{- end }}
+---
+{{- if .Values.services.dataSink.pdb.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "todo1m.fullname" . }}-data-sink-pdb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "todo1m.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.services.dataSink.pdb.minAvailable }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: data-sink
+{{- end }}
+---
+{{- if .Values.services.commandApi.hpa.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "todo1m.fullname" . }}-command-api
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "todo1m.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "todo1m.fullname" . }}-command-api
+  minReplicas: {{ .Values.services.commandApi.hpa.minReplicas }}
+  maxReplicas: {{ .Values.services.commandApi.hpa.maxReplicas }}
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: {{ .Values.services.commandApi.hpa.scaleDownStabilizationWindowSeconds }}
+      policies:
+        - type: Percent
+          value: 30
+          periodSeconds: 60
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.services.commandApi.hpa.targetCPUUtilizationPercentage }}
+{{- end }}
+---
+{{- if .Values.services.sseStreamer.hpa.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "todo1m.fullname" . }}-sse-streamer
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "todo1m.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "todo1m.fullname" . }}-sse-streamer
+  minReplicas: {{ .Values.services.sseStreamer.hpa.minReplicas }}
+  maxReplicas: {{ .Values.services.sseStreamer.hpa.maxReplicas }}
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: {{ .Values.services.sseStreamer.hpa.scaleDownStabilizationWindowSeconds }}
+      policies:
+        - type: Percent
+          value: 20
+          periodSeconds: 60
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.services.sseStreamer.hpa.targetCPUUtilizationPercentage }}
+{{- end }}
+---
+{{- if .Values.services.domainEngine.hpa.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "todo1m.fullname" . }}-domain-engine
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "todo1m.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "todo1m.fullname" . }}-domain-engine
+  minReplicas: {{ .Values.services.domainEngine.hpa.minReplicas }}
+  maxReplicas: {{ .Values.services.domainEngine.hpa.maxReplicas }}
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: {{ .Values.services.domainEngine.hpa.scaleDownStabilizationWindowSeconds }}
+      policies:
+        - type: Percent
+          value: 25
+          periodSeconds: 60
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.services.domainEngine.hpa.targetCPUUtilizationPercentage }}
+{{- end }}
+---
+{{- if .Values.services.dataSink.hpa.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "todo1m.fullname" . }}-data-sink
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "todo1m.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "todo1m.fullname" . }}-data-sink
+  minReplicas: {{ .Values.services.dataSink.hpa.minReplicas }}
+  maxReplicas: {{ .Values.services.dataSink.hpa.maxReplicas }}
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: {{ .Values.services.dataSink.hpa.scaleDownStabilizationWindowSeconds }}
+      policies:
+        - type: Percent
+          value: 25
+          periodSeconds: 60
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.services.dataSink.hpa.targetCPUUtilizationPercentage }}
+{{- end }}

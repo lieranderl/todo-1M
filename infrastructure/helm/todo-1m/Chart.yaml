@@ -1,0 +1,6 @@
+apiVersion: v2
+name: todo-1m
+description: Todo-1M application stack (app services + NATS + Postgres)
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

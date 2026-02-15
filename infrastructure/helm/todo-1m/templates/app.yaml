@@ -1,67 +1,48 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: todo-app-config
-  namespace: default
-data:
-  NATS_URL: nats://nats.default.svc:4222
-  # UI_ORIGIN: https://todo.app
-  UI_ORIGIN: http://localhost:18081
-  COMMAND_API_ADDR: :8080
-  SSE_STREAMER_ADDR: :8081
-  DOMAIN_ENGINE_HEALTH_ADDR: :8082
-  DATA_SINK_HEALTH_ADDR: :8083
-  NATS_CONNECT_TIMEOUT: 90s
-  DB_MIN_CONNS: "2"
-  DB_MAX_CONNS: "20"
-  DB_MAX_CONN_LIFETIME: 30m
-  DB_MAX_CONN_IDLE_TIME: 5m
-  DB_HEALTH_CHECK_PERIOD: 30s
-  SHUTDOWN_TIMEOUT: 15s
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: command-api
-  namespace: default
+  name: {{ include "todo1m.fullname" . }}-command-api
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "todo1m.labels" . | nindent 4 }}
+    app.kubernetes.io/component: command-api
 spec:
-  replicas: 3
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 0
-      maxSurge: 1
+  replicas: {{ .Values.services.commandApi.replicaCount }}
   selector:
     matchLabels:
-      app: command-api
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: command-api
   template:
     metadata:
       labels:
-        app: command-api
+        {{- include "todo1m.labels" . | nindent 8 }}
+        app.kubernetes.io/component: command-api
     spec:
       terminationGracePeriodSeconds: 30
+      {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
-        - name: ghcr-creds
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
       containers:
         - name: command-api
-          image: ghcr.io/lieranderl/todo-1m-command-api:latest@sha256:f47e2b1e1a735085045779c3290d7a4a5434e40f0ee10488d5d3ed6600a4da47
+          image: {{ .Values.services.commandApi.image | quote }}
           imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8080
           envFrom:
             - configMapRef:
-                name: todo-app-config
+                name: {{ include "todo1m.fullname" . }}-app-config
           env:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: todo-db-app
+                  name: {{ include "todo1m.fullname" . }}-db-app
                   key: uri
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: todo-app-secrets
+                  name: {{ include "todo1m.fullname" . }}-app-secrets
                   key: jwt-secret
           startupProbe:
             httpGet:
@@ -84,21 +65,20 @@ spec:
             timeoutSeconds: 2
             failureThreshold: 3
           resources:
-            requests:
-              cpu: 200m
-              memory: 256Mi
-            limits:
-              cpu: "1"
-              memory: 1Gi
+            {{- toYaml .Values.services.commandApi.resources | nindent 12 }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: command-api
-  namespace: default
+  name: {{ include "todo1m.fullname" . }}-command-api
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "todo1m.labels" . | nindent 4 }}
+    app.kubernetes.io/component: command-api
 spec:
   selector:
-    app: command-api
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: command-api
   ports:
     - name: http
       port: 8080
@@ -107,46 +87,48 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sse-streamer
-  namespace: default
+  name: {{ include "todo1m.fullname" . }}-sse-streamer
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "todo1m.labels" . | nindent 4 }}
+    app.kubernetes.io/component: sse-streamer
 spec:
-  replicas: 3
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 0
-      maxSurge: 1
+  replicas: {{ .Values.services.sseStreamer.replicaCount }}
   selector:
     matchLabels:
-      app: sse-streamer
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: sse-streamer
   template:
     metadata:
       labels:
-        app: sse-streamer
+        {{- include "todo1m.labels" . | nindent 8 }}
+        app.kubernetes.io/component: sse-streamer
     spec:
       terminationGracePeriodSeconds: 30
+      {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
-        - name: ghcr-creds
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
       containers:
         - name: sse-streamer
-          image: ghcr.io/lieranderl/todo-1m-sse-streamer:latest@sha256:7b8ac1e894c983620abf08ced4cdca5916a239306ad6791f48d6d0d3c6b5bc13
+          image: {{ .Values.services.sseStreamer.image | quote }}
           imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8081
           envFrom:
             - configMapRef:
-                name: todo-app-config
+                name: {{ include "todo1m.fullname" . }}-app-config
           env:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: todo-db-app
+                  name: {{ include "todo1m.fullname" . }}-db-app
                   key: uri
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: todo-app-secrets
+                  name: {{ include "todo1m.fullname" . }}-app-secrets
                   key: jwt-secret
           startupProbe:
             httpGet:
@@ -169,21 +151,20 @@ spec:
             timeoutSeconds: 2
             failureThreshold: 3
           resources:
-            requests:
-              cpu: 200m
-              memory: 256Mi
-            limits:
-              cpu: "1"
-              memory: 1Gi
+            {{- toYaml .Values.services.sseStreamer.resources | nindent 12 }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: sse-streamer
-  namespace: default
+  name: {{ include "todo1m.fullname" . }}-sse-streamer
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "todo1m.labels" . | nindent 4 }}
+    app.kubernetes.io/component: sse-streamer
 spec:
   selector:
-    app: sse-streamer
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: sse-streamer
   ports:
     - name: http
       port: 8081
@@ -192,36 +173,38 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: domain-engine
-  namespace: default
+  name: {{ include "todo1m.fullname" . }}-domain-engine
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "todo1m.labels" . | nindent 4 }}
+    app.kubernetes.io/component: domain-engine
 spec:
-  replicas: 3
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 0
-      maxSurge: 1
+  replicas: {{ .Values.services.domainEngine.replicaCount }}
   selector:
     matchLabels:
-      app: domain-engine
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: domain-engine
   template:
     metadata:
       labels:
-        app: domain-engine
+        {{- include "todo1m.labels" . | nindent 8 }}
+        app.kubernetes.io/component: domain-engine
     spec:
       terminationGracePeriodSeconds: 30
+      {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
-        - name: ghcr-creds
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
       containers:
         - name: domain-engine
-          image: ghcr.io/lieranderl/todo-1m-domain-engine:latest@sha256:4bb78e0906ca1b763c31b109ab08560c93c3a2e5d9e5ce610248daf94685b75e
+          image: {{ .Values.services.domainEngine.image | quote }}
           imagePullPolicy: Always
           ports:
             - name: health
               containerPort: 8082
           envFrom:
             - configMapRef:
-                name: todo-app-config
+                name: {{ include "todo1m.fullname" . }}-app-config
           startupProbe:
             httpGet:
               path: /readyz
@@ -243,51 +226,48 @@ spec:
             timeoutSeconds: 2
             failureThreshold: 3
           resources:
-            requests:
-              cpu: 150m
-              memory: 192Mi
-            limits:
-              cpu: "1"
-              memory: 512Mi
+            {{- toYaml .Values.services.domainEngine.resources | nindent 12 }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: data-sink
-  namespace: default
+  name: {{ include "todo1m.fullname" . }}-data-sink
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "todo1m.labels" . | nindent 4 }}
+    app.kubernetes.io/component: data-sink
 spec:
-  replicas: 3
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 0
-      maxSurge: 1
+  replicas: {{ .Values.services.dataSink.replicaCount }}
   selector:
     matchLabels:
-      app: data-sink
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: data-sink
   template:
     metadata:
       labels:
-        app: data-sink
+        {{- include "todo1m.labels" . | nindent 8 }}
+        app.kubernetes.io/component: data-sink
     spec:
       terminationGracePeriodSeconds: 30
+      {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
-        - name: ghcr-creds
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
       containers:
         - name: data-sink
-          image: ghcr.io/lieranderl/todo-1m-data-sink:latest@sha256:51e33c2bcb3fefa96ac975c51fdb30eca69b9ae7483780f141e3995fc7f83521
+          image: {{ .Values.services.dataSink.image | quote }}
           imagePullPolicy: Always
           ports:
             - name: health
               containerPort: 8083
           envFrom:
             - configMapRef:
-                name: todo-app-config
+                name: {{ include "todo1m.fullname" . }}-app-config
           env:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: todo-db-app
+                  name: {{ include "todo1m.fullname" . }}-db-app
                   key: uri
           startupProbe:
             httpGet:
@@ -310,9 +290,4 @@ spec:
             timeoutSeconds: 2
             failureThreshold: 3
           resources:
-            requests:
-              cpu: 200m
-              memory: 256Mi
-            limits:
-              cpu: "1"
-              memory: 1Gi
+            {{- toYaml .Values.services.dataSink.resources | nindent 12 }}
